@@ -1,0 +1,756 @@
+{
+    "info": {
+        "_postman_id": "8f3b219e-9e7f-442a-a1b4-7b9e8a514d23",
+        "name": "04. MMC - Customer RFQ & Provider Bidding Flow",
+        "description": "Clean folder-wise Postman collection for the entire Quotation (RFQ) to Booking flow: Categories, Services, Provider Search, Quotation Requests, Provider Bidding, and Booking Confirmation.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "01. Category & Services",
+            "item": [
+                {
+                    "name": "Get Categories List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zoneid",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/category?limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "category"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Category list fetch karne ke liye."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Services by Category",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zoneid",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/service/category/{{category_id}}?limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "service",
+                                "category",
+                                "{{category_id}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Selected category ke andar available services ki list."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "02. Search & Select Providers",
+            "item": [
+                {
+                    "name": "Search Providers by Service & Location",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zoneid",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "service_ids[]",
+                                    "value": "{{service_id}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "latitude",
+                                    "value": "22.66215",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "longitude",
+                                    "value": "75.9035",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/provider/search-by-service",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "provider",
+                                "search-by-service"
+                            ]
+                        },
+                        "description": "Selected service aur lat/long ke basis par available providers search karta hai."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Provider Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zoneid",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/provider-details?id={{provider_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "provider-details"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "{{provider_id}}"
+                                }
+                            ]
+                        },
+                        "description": "Provider ka profile, rating, reviews aur details dekhne ke liye."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "03. Quotation (RFQ) - Customer Side",
+            "item": [
+                {
+                    "name": "Send Quotation Request to Selected Providers",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zoneid",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "service_id",
+                                    "value": "{{service_id}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category_id",
+                                    "value": "{{category_id}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "provider_ids[]",
+                                    "value": "{{provider_id}}",
+                                    "type": "text",
+                                    "description": "Selected Provider ID 1"
+                                },
+                                {
+                                    "key": "service_description",
+                                    "value": "Front bumper damaged, need urgent repair and painting.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "booking_schedule",
+                                    "value": "2026-09-25 11:00:00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "service_address_id",
+                                    "value": "6",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "car_model",
+                                    "value": "Hyundai Creta 2022",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "car_registration_number",
+                                    "value": "MH 12 AB 1234",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "damage_description",
+                                    "value": "Right side bumper scratch and crack.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "car_image",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/post",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "post"
+                            ]
+                        },
+                        "description": "Customer selected providers ko quotation request bhejta hai. Response me 'post_id' milti hai."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get My Quotation Requests List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/post?limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "post"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Customer ki sabhi requests aur aane wale quotes ka count."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Received Quotes from Providers for a Post",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/post/bid?post_id={{post_id}}&limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "post",
+                                "bid"
+                            ],
+                            "query": [
+                                {
+                                    "key": "post_id",
+                                    "value": "{{post_id}}"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Providers ke quotes (offered_price, notes, provider details) compare karne ke liye."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "04. Quotation (Bidding) - Provider Side",
+            "item": [
+                {
+                    "name": "Provider: View New Quotation Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{provider_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/provider/post?status=new_request&limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "provider",
+                                "post"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "new_request"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Provider panel me new requests dekhne ke liye."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Provider: View Request Details (Car & Damage Info)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{provider_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/provider/post/details/{{post_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "provider",
+                                "post",
+                                "details",
+                                "{{post_id}}"
+                            ]
+                        },
+                        "description": "Customer ka car model, photos, damage description dekhne ke liye."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Provider: Submit Price Quote (Bid)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{provider_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"post_id\": \"{{post_id}}\",\n    \"offered_price\": 1200,\n    \"provider_note\": \"Work will be completed in 2 hours with genuine parts.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/provider/post/bid",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "provider",
+                                "post",
+                                "bid"
+                            ]
+                        },
+                        "description": "Provider customer ko apna price quote bhejta hai."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Provider: View My Placed Quotes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{provider_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/provider/post?status=placed_offer&limit=10&offset=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "provider",
+                                "post"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "placed_offer"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Provider ne jo quotes bhej rakhe hain unki list."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Provider: Withdraw Price Quote",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{provider_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"post_id\": \"{{post_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/provider/post/bid/withdraw",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "provider",
+                                "post",
+                                "bid",
+                                "withdraw"
+                            ]
+                        },
+                        "description": "Bheja gaya quote wapas lene ke liye."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "05. Booking Confirmation",
+            "item": [
+                {
+                    "name": "Confirm Booking (Cash After Service)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zone-id",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"post_id\": \"{{post_id}}\",\n    \"provider_id\": \"{{provider_id}}\",\n    \"payment_method\": \"cash_after_service\",\n    \"zone_id\": \"{{zone_id}}\",\n    \"service_location\": \"customer\",\n    \"service_schedule\": \"2026-09-25 11:00:00\",\n    \"booking_type\": \"normal\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/booking/request/send",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "booking",
+                                "request",
+                                "send"
+                            ]
+                        },
+                        "description": "Cash payment ke sath quote accept karke direct booking create karna."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Confirm Booking (Wallet Payment)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zone-id",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"post_id\": \"{{post_id}}\",\n    \"provider_id\": \"{{provider_id}}\",\n    \"payment_method\": \"wallet_payment\",\n    \"zone_id\": \"{{zone_id}}\",\n    \"service_location\": \"customer\",\n    \"service_schedule\": \"2026-09-25 11:00:00\",\n    \"booking_type\": \"normal\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/booking/request/send",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "booking",
+                                "request",
+                                "send"
+                            ]
+                        },
+                        "description": "Wallet payment ke sath booking create karna."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Track Booking Status",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "zone-id",
+                                "value": "{{zone_id}}"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{customer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customer/booking/track/{{booking_readable_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customer",
+                                "booking",
+                                "track",
+                                "{{booking_readable_id}}"
+                            ]
+                        },
+                        "description": "Booking status track karne ke liye."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost/mmc"
+        },
+        {
+            "key": "customer_token",
+            "value": "YOUR_CUSTOMER_BEARER_TOKEN"
+        },
+        {
+            "key": "provider_token",
+            "value": "YOUR_PROVIDER_BEARER_TOKEN"
+        },
+        {
+            "key": "zone_id",
+            "value": "a1614dbe-4732-11ee-9702-dee6e8d77be4"
+        },
+        {
+            "key": "category_id",
+            "value": "675fb918-9d0c-4ee5-9a0a-904b42651033"
+        },
+        {
+            "key": "service_id",
+            "value": "f473637e-cd69-4796-8d4a-b8eed2f7efca"
+        },
+        {
+            "key": "provider_id",
+            "value": "cffcce91-5498-4b73-b571-8e6e69bbd89d"
+        },
+        {
+            "key": "post_id",
+            "value": "REPLACE_WITH_CREATED_POST_ID"
+        },
+        {
+            "key": "booking_readable_id",
+            "value": "100012"
+        }
+    ]
+}
