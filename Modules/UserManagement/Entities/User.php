@@ -38,6 +38,10 @@ class User extends Authenticatable
         'password'
     ];
 
+    protected $attributes = [
+        'is_phone_verified' => 1,
+    ];
+
     protected $casts = [
         'is_phone_verified' => 'integer',
         'is_email_verified' => 'integer',

@@ -6852,4 +6852,5 @@ _Message' => 'Customer notification for provider bid offer
   'Damage / Work Description' => 'Damage / Work Description',
   'Hello fdgfgfg fgfg, here is your quotation/booking estimate for Scratch removal from TATA ROHIT: http://localhost/mmc/estimate/e0cd01c565b6374485cbf609bcdac74160b98ba789d04bea' => 'Hello fdgfgfg fgfg, here is your quotation/booking estimate for Scratch removal from TATA ROHIT: http://localhost/mmc/estimate/e0cd01c565b6374485cbf609bcdac74160b98ba789d04bea',
   'Inspection / Vehicle Photo' => 'Inspection / Vehicle Photo',
+  'No provider account found with this email or phone.' => 'No provider account found with this email or phone.',
 );
