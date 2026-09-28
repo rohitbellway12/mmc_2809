@@ -6857,4 +6857,11 @@ _Message' => 'Customer notification for provider bid offer
   'OTP has been sent to your email. Please verify OTP to complete registration.' => 'OTP has been sent to your email. Please verify OTP to complete registration.',
   'Email verified successfully! Registration is now complete.' => 'Email verified successfully! Registration is now complete.',
   'Damaged Vehicle Photos' => 'Damaged Vehicle Photos',
+  'A service provider has submitted a price quotation of ' => 'A service provider has submitted a price quotation of ',
+  ' for your request.' => ' for your request.',
+  'New Quotation Offer Received' => 'New Quotation Offer Received',
+  'New Quotation Offer' => 'New Quotation Offer',
+  'A service provider has submitted a price quotation offer for your custom request.' => 'A service provider has submitted a price quotation offer for your custom request.',
+  'Service / Request' => 'Service / Request',
+  'Please open the mobile app or web portal to view and respond to this offer.' => 'Please open the mobile app or web portal to view and respond to this offer.',
 );

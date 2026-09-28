@@ -135,7 +135,7 @@ class ServiceController extends Controller
                 'description' => 'nullable',
                 // 'short_description' => 'required',
                 // 'short_description.0' => 'required',
-                'tax' => 'required|numeric|min:0|max:100',
+                'tax' => 'nullable|numeric|min:0|max:100',
                 'price' => 'nullable|numeric|min:0',
             ]
         );
@@ -151,7 +151,7 @@ class ServiceController extends Controller
         $service->description = $request->description[array_search('default', $request->lang)] ?? '';
         $service->cover_image = 'def.png';
         $service->thumbnail = 'def.png';
-        $service->tax = $request->tax;
+        $service->tax = $request->tax ?? 0;
         $service->price = $request->price ?? 0;
         $service->min_bidding_price = 0;
         $service->save();
@@ -401,7 +401,7 @@ class ServiceController extends Controller
             // 'description.0' => 'required',
             // 'short_description' => 'required',
             // 'short_description.0' => 'required',
-            'tax' => 'required|numeric|min:0',
+            'tax' => 'nullable|numeric|min:0|max:100',
             'price' => 'nullable|numeric|min:0',
             'variants' => 'nullable|array',
         ]);
@@ -429,7 +429,7 @@ class ServiceController extends Controller
             $service->thumbnail = file_uploader('service/', 'png', $request->file('thumbnail'));
         }
 
-        $service->tax = $request->tax;
+        $service->tax = $request->tax ?? 0;
         $service->price = $request->price ?? 0;
         $service->min_bidding_price = 0;
         $service->save();
