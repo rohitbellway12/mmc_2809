@@ -155,11 +155,18 @@
                                             <td>
                                                 @if($post->car_model || $post->car_registration_number || $post->car_image)
                                                     <div class="d-flex align-items-center gap-2">
-                                                        @if($post->car_image)
-                                                            <a href="{{asset('storage/app/public/post/car/' . $post->car_image)}}" target="_blank" title="{{translate('View Full Image')}}">
-                                                                <img src="{{asset('storage/app/public/post/car/' . $post->car_image)}}" alt="Car" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6;">
+                                                        @if(!empty($post->car_images_full_path))
+                                                        <div class="position-relative d-inline-block">
+                                                            <a href="{{$post->car_images_full_path[0]}}" target="_blank" title="{{translate('View Full Image')}}">
+                                                                <img src="{{$post->car_images_full_path[0]}}" alt="Car" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6;">
                                                             </a>
-                                                        @endif
+                                                            @if(count($post->car_images_full_path) > 1)
+                                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size: 10px;">
+                                                                    +{{count($post->car_images_full_path) - 1}}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                         <div>
                                                             <div class="fw-semibold text-dark fs-13">{{$post->car_model ?? translate('Car Details')}}</div>
                                                             @if($post->car_registration_number)
@@ -398,11 +405,15 @@
                                                                                         <span class="text-muted">{{translate('Damage')}}:</span> <span>{{$post->damage_description}}</span>
                                                                                     </div>
                                                                                 @endif
-                                                                                @if($post->car_image)
+                                                                                @if(!empty($post->car_images_full_path))
                                                                                     <div class="col-12 mt-2">
-                                                                                        <a href="{{asset('storage/app/public/post/car/' . $post->car_image)}}" target="_blank">
-                                                                                            <img src="{{asset('storage/app/public/post/car/' . $post->car_image)}}" alt="Damage" style="max-height: 100px; border-radius: 6px; border: 1px solid #ccc;">
-                                                                                        </a>
+                                                                                        <div class="d-flex flex-wrap gap-2">
+                                                                                            @foreach($post->car_images_full_path as $imgUrl)
+                                                                                                <a href="{{$imgUrl}}" target="_blank">
+                                                                                                    <img src="{{$imgUrl}}" alt="Damage" style="height: 60px; width: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;">
+                                                                                                </a>
+                                                                                            @endforeach
+                                                                                        </div>
                                                                                     </div>
                                                                                 @endif
                                                                             </div>

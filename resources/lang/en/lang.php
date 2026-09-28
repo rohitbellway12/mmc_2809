@@ -6853,4 +6853,8 @@ _Message' => 'Customer notification for provider bid offer
   'Hello fdgfgfg fgfg, here is your quotation/booking estimate for Scratch removal from TATA ROHIT: http://localhost/mmc/estimate/e0cd01c565b6374485cbf609bcdac74160b98ba789d04bea' => 'Hello fdgfgfg fgfg, here is your quotation/booking estimate for Scratch removal from TATA ROHIT: http://localhost/mmc/estimate/e0cd01c565b6374485cbf609bcdac74160b98ba789d04bea',
   'Inspection / Vehicle Photo' => 'Inspection / Vehicle Photo',
   'No provider account found with this email or phone.' => 'No provider account found with this email or phone.',
+  'OTP has expired. Please request a new OTP.' => 'OTP has expired. Please request a new OTP.',
+  'OTP has been sent to your email. Please verify OTP to complete registration.' => 'OTP has been sent to your email. Please verify OTP to complete registration.',
+  'Email verified successfully! Registration is now complete.' => 'Email verified successfully! Registration is now complete.',
+  'Damaged Vehicle Photos' => 'Damaged Vehicle Photos',
 );

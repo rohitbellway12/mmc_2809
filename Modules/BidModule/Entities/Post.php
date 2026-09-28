@@ -19,7 +19,7 @@ class Post extends Model
 
     protected $fillable = [];
 
-    protected $appends = ['car_image_full_path'];
+    protected $appends = ['car_image_full_path', 'car_images_full_path'];
 
     protected static function newFactory()
     {
@@ -112,11 +112,37 @@ class Post extends Model
         );
     }
 
+    public function getCarImagesAttribute(): array
+    {
+        $raw = $this->attributes['car_image'] ?? null;
+        if (empty($raw)) {
+            return [];
+        }
+        if (str_starts_with($raw, '[')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return [$raw];
+    }
+
     public function getCarImageFullPathAttribute(): ?string
     {
-        if (!$this->car_image) {
+        $images = $this->car_images;
+        if (empty($images)) {
             return null;
         }
-        return asset('storage/app/public/post/car/' . $this->car_image);
+        return asset('storage/app/public/post/car/' . $images[0]);
+    }
+
+    public function getCarImagesFullPathAttribute(): array
+    {
+        $images = $this->car_images;
+        $fullPaths = [];
+        foreach ($images as $img) {
+            $fullPaths[] = asset('storage/app/public/post/car/' . $img);
+        }
+        return $fullPaths;
     }
 }

@@ -125,7 +125,9 @@ class PostController extends Controller
             'provider_ids.*' => 'uuid',
             'car_model' => 'nullable|string',
             'car_registration_number' => 'nullable|string',
-            'car_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'car_image' => 'nullable',
+            'car_images' => 'nullable|array',
+            'car_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'damage_description' => 'nullable|string',
             'additional_instructions' => 'array',
             'service_address_id' => is_null($request['service_address']) ? 'required' : 'nullable',
@@ -188,8 +190,29 @@ class PostController extends Controller
         $post->car_model = $request['car_model'] ?? null;
         $post->car_registration_number = $request['car_registration_number'] ?? null;
         $post->damage_description = $request['damage_description'] ?? null;
-        if ($request->hasFile('car_image')) {
-            $post->car_image = file_uploader('post/car/', 'png', $request->file('car_image'));
+
+        // Multiple car images handling (supports car_images[] or car_image[] or single car_image)
+        $uploadedCarImages = [];
+        if ($request->hasFile('car_images')) {
+            $files = $request->file('car_images');
+            if (!is_array($files)) $files = [$files];
+            foreach ($files as $imgFile) {
+                if ($imgFile->isValid()) {
+                    $uploadedCarImages[] = file_uploader('post/car/', 'png', $imgFile);
+                }
+            }
+        } elseif ($request->hasFile('car_image')) {
+            $files = $request->file('car_image');
+            if (!is_array($files)) $files = [$files];
+            foreach ($files as $imgFile) {
+                if ($imgFile->isValid()) {
+                    $uploadedCarImages[] = file_uploader('post/car/', 'png', $imgFile);
+                }
+            }
+        }
+
+        if (!empty($uploadedCarImages)) {
+            $post->car_image = count($uploadedCarImages) > 1 ? json_encode($uploadedCarImages) : $uploadedCarImages[0];
         }
 
         $post->save();

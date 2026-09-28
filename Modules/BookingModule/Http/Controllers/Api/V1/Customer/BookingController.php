@@ -1106,7 +1106,7 @@ class BookingController extends Controller
     public function getProviderQuestions(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'provider_id' => 'required|uuid',
+            'provider_id' => 'nullable|uuid',
             'category_id' => 'nullable|uuid'
         ]);
 
@@ -1114,24 +1114,28 @@ class BookingController extends Controller
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
         }
 
-        $provider = Provider::where('id', $request['provider_id'])
-            ->orWhere('user_id', $request['provider_id'])
-            ->first();
-
-        if (!$provider) {
-            return response()->json(response_formatter(DEFAULT_204), 200);
+        $providerId = null;
+        if (!empty($request['provider_id'])) {
+            $provider = Provider::where('id', $request['provider_id'])
+                ->orWhere('user_id', $request['provider_id'])
+                ->first();
+            $providerId = $provider?->id;
         }
 
         $questions = ProviderQuestion::where('is_active', 1)
-            ->where(function ($query) use ($provider) {
-                $query->whereNull('provider_id')
-                    ->orWhere('provider_id', $provider->id);
+            ->when(!empty($providerId), function ($query) use ($providerId) {
+                $query->where(function ($q) use ($providerId) {
+                    $q->whereNull('provider_id')
+                        ->orWhere('provider_id', $providerId);
+                });
+            }, function ($query) {
+                $query->whereNull('provider_id');
             })
-            ->where(function ($query) use ($request) {
-                $query->whereNull('category_id'); // General questions
-                if ($request->has('category_id')) {
-                    $query->orWhere('category_id', $request->category_id); // Category specific questions
-                }
+            ->when($request->filled('category_id'), function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->whereNull('category_id')
+                        ->orWhere('category_id', $request->category_id);
+                });
             })
             ->orderBy('display_order')
             ->get();

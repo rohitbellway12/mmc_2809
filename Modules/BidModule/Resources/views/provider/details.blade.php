@@ -166,19 +166,23 @@
                                                     {{$post->damage_description ?? ($post->service_description ?? translate('No specific damage description provided.'))}}
                                                 </div>
                                             </div>
-                                            @if($post->car_image)
+                                            @if(!empty($post->car_images_full_path))
                                                 <div class="col-12">
-                                                    <span class="text-muted fs-12 d-block mb-1">{{translate('Damaged Vehicle Photo')}}</span>
-                                                    <div class="position-relative d-inline-block">
-                                                        <a href="{{asset('storage/app/public/post/car/'.$post->car_image)}}" target="_blank" title="{{translate('Click to see full image')}}">
-                                                            <img src="{{asset('storage/app/public/post/car/'.$post->car_image)}}" 
-                                                                 class="rounded border shadow-sm" 
-                                                                 style="max-height: 180px; max-width: 100%; object-fit: cover;"
-                                                                 alt="{{translate('Car Damage Photo')}}">
-                                                            <div class="badge bg-dark position-absolute bottom-0 end-0 m-2 opacity-75 text-white">
-                                                                <span class="material-icons fs-12 align-middle">zoom_in</span> {{translate('Zoom')}}
+                                                    <span class="text-muted fs-12 d-block mb-2">{{translate('Damaged Vehicle Photos')}} ({{count($post->car_images_full_path)}})</span>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        @foreach($post->car_images_full_path as $imgUrl)
+                                                            <div class="position-relative d-inline-block">
+                                                                <a href="{{$imgUrl}}" target="_blank" title="{{translate('Click to see full image')}}">
+                                                                    <img src="{{$imgUrl}}" 
+                                                                         class="rounded border shadow-sm" 
+                                                                         style="height: 120px; width: 120px; object-fit: cover;"
+                                                                         alt="{{translate('Car Damage Photo')}}">
+                                                                    <div class="badge bg-dark position-absolute bottom-0 end-0 m-1 opacity-75 text-white" style="font-size: 10px;">
+                                                                        <span class="material-icons fs-12 align-middle">zoom_in</span>
+                                                                    </div>
+                                                                </a>
                                                             </div>
-                                                        </a>
+                                                        @endforeach
                                                     </div>
                                                 </div>
                                             @endif
