@@ -62,6 +62,11 @@ class Post extends Model
         return $this->hasMany(PostAdditionalInstruction::class, 'post_id', 'id');
     }
 
+    public function question_answers(): HasMany
+    {
+        return $this->hasMany(\Modules\BookingModule\Entities\BookingQuestionAnswer::class, 'post_id', 'id')->with('question');
+    }
+
     public function postDeleteNote(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(PostAdditionalInformation::class, 'post_id')->where('key', 'post_delete_note');

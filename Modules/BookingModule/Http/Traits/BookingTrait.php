@@ -808,7 +808,7 @@ trait BookingTrait
             $booking->save();
 
             // Question Answers
-            if (isset($request['answers']) && is_array($request['answers'])) {
+            if (isset($request['answers']) && is_array($request['answers']) && count($request['answers']) > 0) {
                 foreach ($request['answers'] as $questionId => $answer) {
                     $question = \Modules\ProviderManagement\Entities\ProviderQuestion::find($questionId);
                     $finalAnswer = $answer;
@@ -820,8 +820,19 @@ trait BookingTrait
 
                     \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
                         'booking_id' => $booking->id,
+                        'post_id' => $biddingPost?->id,
                         'provider_question_id' => $questionId,
-                        'answer_value' => $finalAnswer
+                        'answer_value' => is_array($finalAnswer) ? implode(', ', $finalAnswer) : $finalAnswer
+                    ]);
+                }
+            } elseif ($biddingPost) {
+                $postAnswers = \Modules\BookingModule\Entities\BookingQuestionAnswer::where('post_id', $biddingPost->id)->get();
+                foreach ($postAnswers as $postAns) {
+                    \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                        'booking_id' => $booking->id,
+                        'post_id' => $biddingPost->id,
+                        'provider_question_id' => $postAns->provider_question_id,
+                        'answer_value' => $postAns->answer_value
                     ]);
                 }
             }

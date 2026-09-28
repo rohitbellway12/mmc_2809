@@ -193,7 +193,7 @@ class PostController extends Controller
     public function details(Request $request, $post_id): Renderable|RedirectResponse
     {
         $post = $this->post
-            ->with(['bids', 'addition_instructions', 'service', 'services.category', 'services.subCategory', 'category', 'sub_category', 'booking', 'customer', 'service_address'])
+            ->with(['bids', 'addition_instructions', 'question_answers.question', 'service', 'services.category', 'services.subCategory', 'category', 'sub_category', 'booking', 'customer', 'service_address'])
             ->where('id', $post_id)
             ->first();
 

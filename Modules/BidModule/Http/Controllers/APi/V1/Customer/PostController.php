@@ -54,7 +54,7 @@ class PostController extends Controller
 
         $biddingPostValidity = (int)(business_config('bidding_post_validity', 'bidding_system'))->live_values;
         $posts = $this->post
-            ->with(['addition_instructions', 'service', 'services', 'category', 'sub_category', 'booking', 'targeted_providers'])
+            ->with(['addition_instructions', 'question_answers.question', 'service', 'services', 'category', 'sub_category', 'booking', 'targeted_providers'])
             ->withCount(['bids' => function ($query) {
                 $query->where('status', 'pending');
             }])
@@ -84,7 +84,7 @@ class PostController extends Controller
     public function show($postId, Request $request): JsonResponse
     {
         $post = $this->post
-            ->with(['addition_instructions', 'service', 'services', 'category', 'sub_category', 'booking', 'service_address', 'targeted_providers'])
+            ->with(['addition_instructions', 'question_answers.question', 'service', 'services', 'category', 'sub_category', 'booking', 'service_address', 'targeted_providers'])
             ->withCount(['bids'])
             ->where('id', $postId)
             ->where('customer_user_id', $request->user()->id)
@@ -244,6 +244,36 @@ class PostController extends Controller
                 $data[$key]['updated_at'] = now();
             }
             $this->post_additional_instruction->insert($data);
+        }
+
+        // Save Category Question Answers
+        $answers = $request->answers ?? $request->question_answers ?? [];
+        if (is_string($answers)) {
+            $answers = json_decode($answers, true) ?? [];
+        }
+        if (is_array($answers) && count($answers) > 0) {
+            foreach ($answers as $questionId => $answer) {
+                $qId = null;
+                $ansVal = '';
+                if (is_array($answer) && isset($answer['provider_question_id'])) {
+                    $qId = $answer['provider_question_id'];
+                    $ansVal = is_array($answer['answer_value'] ?? null) ? implode(', ', $answer['answer_value']) : ($answer['answer_value'] ?? '');
+                } elseif (is_array($answer) && isset($answer['question_id'])) {
+                    $qId = $answer['question_id'];
+                    $ansVal = is_array($answer['answer'] ?? null) ? implode(', ', $answer['answer']) : ($answer['answer'] ?? '');
+                } else {
+                    $qId = $questionId;
+                    $ansVal = is_array($answer) ? implode(', ', $answer) : (string)$answer;
+                }
+
+                if (!empty($qId)) {
+                    \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                        'post_id' => $post->id,
+                        'provider_question_id' => $qId,
+                        'answer_value' => $ansVal
+                    ]);
+                }
+            }
         }
 
         // Notify Providers: Only selected providers if targeted, otherwise all subscribed providers

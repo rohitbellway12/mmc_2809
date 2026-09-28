@@ -13,9 +13,18 @@ class BookingQuestionAnswer extends Model
 
     protected $fillable = [
         'booking_id',
+        'post_id',
         'provider_question_id',
         'answer_value'
     ];
+
+    /**
+     * Get the post that owns the answer
+     */
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\BidModule\Entities\Post::class, 'post_id');
+    }
 
     /**
      * Get the booking that owns the answer

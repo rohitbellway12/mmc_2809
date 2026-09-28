@@ -221,6 +221,33 @@
                                     </div>
                                 </div>
                             </div>
+                            @if(isset($post->question_answers) && count($post->question_answers) > 0)
+                            <div class="col-12">
+                                <div class="card border border-info-subtle shadow-xs mb-3">
+                                    <div class="card-header d-flex align-items-center gap-2 bg-info-light shadow-none" style="background-color: #f0f9ff;">
+                                        <span class="material-icons text-info">quiz</span>
+                                        <h5 class="text-uppercase mb-0 text-dark fw-bold">{{translate('Customer Answered Questions')}}</h5>
+                                    </div>
+                                    <div class="card-body pb-4">
+                                        <div class="row g-3">
+                                            @foreach($post->question_answers as $qa)
+                                                <div class="col-md-6 col-lg-3">
+                                                    <div class="p-3 rounded-3 border bg-white h-100 shadow-xs">
+                                                        <strong class="d-block text-dark mb-2 fs-13">
+                                                            <span class="material-icons fs-14 text-primary align-middle me-1">help_outline</span>
+                                                            {{ $qa->question?->question_text ?? translate('Question') }}
+                                                        </strong>
+                                                        <span class="badge bg-primary-light text-primary fs-12 px-2 py-1 border border-primary-subtle rounded-2">
+                                                            {{ $qa->answer_value ?? '-' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                             @if(!$post->is_booked && !$post?->bids->contains('provider_id', auth()->user()->provider->id))
                             <div class="col-12">
                                 <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #e6f9ed 100%); border: 2px solid #22c55e !important;">
