@@ -81,6 +81,7 @@ class BookingEstimate extends Model
         'deep_link_url',
         'web_url',
         'car_image_full_path',
+        'car_images_full_path',
     ];
 
     public function provider(): BelongsTo
@@ -106,6 +107,11 @@ class BookingEstimate extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class, 'zone_id');
+    }
+
+    public function question_answers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BookingQuestionAnswer::class, 'booking_estimate_id')->with('question');
     }
 
     public function booking(): BelongsTo
@@ -134,12 +140,33 @@ class BookingEstimate extends Model
         return url('/estimate/' . $this->link_token);
     }
 
+    public function getCarImagesAttribute(): array
+    {
+        $raw = $this->attributes['car_image'] ?? null;
+        if (empty($raw)) return [];
+        if (is_array($raw)) return $raw;
+        $decoded = json_decode($raw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+        if (str_contains($raw, ',')) {
+            return array_map('trim', explode(',', $raw));
+        }
+        return [$raw];
+    }
+
+    public function getCarImagesFullPathAttribute(): array
+    {
+        $images = $this->car_images;
+        return array_map(function ($img) {
+            return asset('storage/app/public/estimate/car/' . $img);
+        }, $images);
+    }
+
     public function getCarImageFullPathAttribute(): ?string
     {
-        if ($this->car_image) {
-            return asset('storage/app/public/estimate/car/' . $this->car_image);
-        }
-        return null;
+        $fullPaths = $this->car_images_full_path;
+        return $fullPaths[0] ?? null;
     }
 
     public static function boot()

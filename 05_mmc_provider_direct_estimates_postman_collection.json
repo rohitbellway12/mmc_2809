@@ -303,6 +303,30 @@
                                     "key": "car_image",
                                     "type": "file",
                                     "src": []
+                                },
+                                {
+                                    "key": "answers[170afdec-3915-49bf-8054-c197bb6b3072]",
+                                    "value": "Scuff, Scratch",
+                                    "description": "Category Question: What type of damage?",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "answers[baba60f3-1c8c-4035-b317-5bea0d827d53]",
+                                    "value": "Plastic",
+                                    "description": "Category Question: What is the panel material?",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "answers[b9a19e80-9af5-46e8-bd9b-91d9405d456a]",
+                                    "value": "Metallic",
+                                    "description": "Category Question: Is the paint metallic, pearl or matte?",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "answers[95238bf4-5e6a-4902-b77d-40dff16f03dc]",
+                                    "value": "No",
+                                    "description": "Category Question: Has this area been repaired before?",
+                                    "type": "text"
                                 }
                             ]
                         },

@@ -281,10 +281,21 @@ class BookingEstimateController extends Controller
             })
             ->first();
 
-        // Car image
+        // Car images (supports multiple car_images[] or single car_image)
         $carImageName = null;
-        if ($request->hasFile('car_image')) {
-            $carImageName = file_uploader('estimate/car/', 'png', $request->file('car_image'));
+        $carImages = [];
+        if ($request->hasFile('car_images')) {
+            foreach ($request->file('car_images') as $imgFile) {
+                if ($imgFile) {
+                    $carImages[] = file_uploader('estimate/car/', 'png', $imgFile);
+                }
+            }
+        } elseif ($request->hasFile('car_image')) {
+            $carImages[] = file_uploader('estimate/car/', 'png', $request->file('car_image'));
+        }
+
+        if (!empty($carImages)) {
+            $carImageName = count($carImages) === 1 ? $carImages[0] : json_encode($carImages);
         }
 
         $estimate = new BookingEstimate();
@@ -313,6 +324,36 @@ class BookingEstimateController extends Controller
         $estimate->status = 'pending';
         $estimate->expired_at = now()->addDays(7);
         $estimate->save();
+
+        // Save Category Question Answers
+        $answers = $request->answers ?? $request->question_answers ?? [];
+        if (is_string($answers)) {
+            $answers = json_decode($answers, true) ?? [];
+        }
+        if (is_array($answers) && count($answers) > 0) {
+            foreach ($answers as $questionId => $answer) {
+                $qId = null;
+                $ansVal = '';
+                if (is_array($answer) && isset($answer['provider_question_id'])) {
+                    $qId = $answer['provider_question_id'];
+                    $ansVal = is_array($answer['answer_value'] ?? null) ? implode(', ', $answer['answer_value']) : ($answer['answer_value'] ?? '');
+                } elseif (is_array($answer) && isset($answer['question_id'])) {
+                    $qId = $answer['question_id'];
+                    $ansVal = is_array($answer['answer'] ?? null) ? implode(', ', $answer['answer']) : ($answer['answer'] ?? '');
+                } else {
+                    $qId = $questionId;
+                    $ansVal = is_array($answer) ? implode(', ', $answer) : (string)$answer;
+                }
+
+                if (!empty($qId)) {
+                    \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                        'booking_estimate_id' => $estimate->id,
+                        'provider_question_id' => $qId,
+                        'answer_value' => $ansVal
+                    ]);
+                }
+            }
+        }
 
         if ($existingCustomer) {
             try {

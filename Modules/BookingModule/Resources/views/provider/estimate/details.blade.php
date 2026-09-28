@@ -231,13 +231,17 @@
                                             <p class="fz-13 text-dark bg-light p-3 rounded-2 mb-0">{{ $estimate->damage_description }}</p>
                                         </div>
                                     @endif
-                                    @if($estimate->car_image_full_path)
+                                    @if($estimate->car_images_full_path && count($estimate->car_images_full_path) > 0)
                                         <div class="col-12">
-                                            <label class="fz-12 text-muted d-block mb-2">{{ translate('Inspection / Vehicle Photo') }}</label>
-                                            <a href="{{ $estimate->car_image_full_path }}" target="_blank">
-                                                <img src="{{ $estimate->car_image_full_path }}" alt="Car Image" 
-                                                     class="rounded-3 border shadow-sm img-thumbnail" style="max-height: 200px;">
-                                            </a>
+                                            <label class="fz-12 text-muted d-block mb-2">{{ translate('Inspection / Vehicle Photos') }}</label>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach($estimate->car_images_full_path as $imgPath)
+                                                    <a href="{{ $imgPath }}" target="_blank" title="{{ translate('Click to enlarge') }}">
+                                                        <img src="{{ $imgPath }}" alt="Car Image" 
+                                                             class="rounded-3 border shadow-sm img-thumbnail" style="height: 120px; width: 140px; object-fit: cover;">
+                                                    </a>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     @endif
                                 </div>

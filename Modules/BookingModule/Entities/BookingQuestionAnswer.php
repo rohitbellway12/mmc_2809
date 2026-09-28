@@ -14,9 +14,18 @@ class BookingQuestionAnswer extends Model
     protected $fillable = [
         'booking_id',
         'post_id',
+        'booking_estimate_id',
         'provider_question_id',
         'answer_value'
     ];
+
+    /**
+     * Get the estimate that owns the answer
+     */
+    public function estimate(): BelongsTo
+    {
+        return $this->belongsTo(BookingEstimate::class, 'booking_estimate_id');
+    }
 
     /**
      * Get the post that owns the answer

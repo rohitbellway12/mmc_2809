@@ -136,9 +136,9 @@
                                                   placeholder="{{ translate('Detail any work needed, body damage, or symptoms...') }}">{{ old('damage_description') }}</textarea>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label fw-medium">{{ translate('Vehicle_Photo / Inspection Image') }}</label>
-                                        <input type="file" name="car_image" class="form-control" accept="image/*">
-                                        <span class="fz-11 text-muted">{{ translate('JPG, PNG, WebP up to 10MB') }}</span>
+                                        <label class="form-label fw-medium">{{ translate('Vehicle_Photos / Inspection Images') }}</label>
+                                        <input type="file" name="car_images[]" class="form-control" accept="image/*" multiple>
+                                        <span class="fz-11 text-muted">{{ translate('JPG, PNG, WebP up to 10MB (You can select multiple photos)') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -335,6 +335,19 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                    </div>
+
+                                    {{-- Dynamic Category Questions Container --}}
+                                    <div class="col-12 d-none" id="category_questions_wrapper">
+                                        <div class="p-3 rounded-3 border bg-light shadow-xs">
+                                            <label class="form-label fw-bold fz-14 text-dark mb-2 d-flex align-items-center gap-2">
+                                                <span class="material-icons text-primary fs-18">quiz</span>
+                                                {{ translate('Category Specific Questions') }}
+                                            </label>
+                                            <div id="category_questions_container" class="row g-3">
+                                                {{-- Dynamic questions loaded via JS --}}
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {{-- Schedule Date & Time --}}
@@ -591,6 +604,7 @@
 
                 if (!opt.val()) {
                     $('#service_info_badge').hide();
+                    loadCategoryQuestions();
                     return;
                 }
 
@@ -613,9 +627,105 @@
                     $('#price_label').text("{{ translate('Service Amount') }} ({{ currency_symbol() }}) *");
                     $('#service_price').val(parseFloat(price).toFixed(2));
                 }
+                loadCategoryQuestions();
             }
 
-            $('#service_id').on('change', handleServiceChange);
+            // Dynamic Category Questions Loader
+            function loadCategoryQuestions() {
+                let opt = $('#service_id').find(':selected');
+                let catId = $('#category_filter').val();
+                if ((!catId || catId === 'all') && opt.val()) {
+                    catId = opt.data('category');
+                }
+
+                if (!catId || catId === 'all') {
+                    $('#category_questions_wrapper').addClass('d-none');
+                    $('#category_questions_container').html('');
+                    return;
+                }
+
+                let providerId = "{{ $provider->id }}";
+                $.ajax({
+                    url: "{{ url('/api/v1/customer/booking/provider/questions') }}",
+                    type: "GET",
+                    data: {
+                        category_id: catId,
+                        provider_id: providerId
+                    },
+                    success: function(res) {
+                        let questions = res.content || [];
+                        if (questions.length > 0) {
+                            let html = '';
+                            questions.forEach(function(q) {
+                                html += `<div class="col-md-6">
+                                    <label class="form-label fw-semibold fz-13 text-dark mb-1">
+                                        ${q.question_text} ${q.is_required ? '<span class="text-danger">*</span>' : ''}
+                                    </label>`;
+
+                                if (q.question_type === 'select' && q.options) {
+                                    let opts = q.options.split(',').map(o => o.trim());
+                                    let qTextLower = q.question_text.toLowerCase();
+                                    let isMulti = qTextLower.includes('select all') || qTextLower.includes('apply') || qTextLower.includes('multiple');
+
+                                    if (isMulti) {
+                                        html += `<div class="d-flex flex-wrap gap-2 pt-1">`;
+                                        opts.forEach(function(o) {
+                                            html += `<label class="btn btn-sm btn-outline-warning text-dark border-secondary-subtle rounded-3 chip-btn px-3 py-2 cursor-pointer shadow-xs mb-0">
+                                                <input type="checkbox" name="answers[${q.id}][]" value="${o}" class="d-none chip-checkbox">
+                                                <span class="chip-text">${o}</span>
+                                                <span class="material-icons fs-14 align-middle ms-1 check-icon d-none">check_circle</span>
+                                            </label>`;
+                                        });
+                                        html += `</div>`;
+                                    } else {
+                                        html += `<select name="answers[${q.id}]" class="form-select" ${q.is_required ? 'required' : ''}>
+                                            <option value="">-- {{ translate('Select Option') }} --</option>`;
+                                        opts.forEach(function(o) {
+                                            html += `<option value="${o}">${o}</option>`;
+                                        });
+                                        html += `</select>`;
+                                    }
+                                } else if (q.question_type === 'yes_no') {
+                                    html += `<select name="answers[${q.id}]" class="form-select" ${q.is_required ? 'required' : ''}>
+                                        <option value="">-- {{ translate('Select') }} --</option>
+                                        <option value="Yes">{{ translate('Yes') }}</option>
+                                        <option value="No">{{ translate('No') }}</option>
+                                        <option value="Not sure">{{ translate('Not sure') }}</option>
+                                    </select>`;
+                                } else {
+                                    html += `<input type="text" name="answers[${q.id}]" class="form-control" placeholder="{{ translate('Enter details') }}" ${q.is_required ? 'required' : ''}>`;
+                                }
+                                html += `</div>`;
+                            });
+                            $('#category_questions_container').html(html);
+                            $('#category_questions_wrapper').removeClass('d-none');
+                        } else {
+                            $('#category_questions_wrapper').addClass('d-none');
+                            $('#category_questions_container').html('');
+                        }
+                    },
+                    error: function() {
+                        $('#category_questions_wrapper').addClass('d-none');
+                        $('#category_questions_container').html('');
+                    }
+                });
+            }
+
+            // Chip checkbox toggle handler for multi-select questions
+            $(document).on('change', '.chip-checkbox', function() {
+                let btn = $(this).closest('.chip-btn');
+                if ($(this).is(':checked')) {
+                    btn.addClass('btn-warning text-dark fw-bold border-warning')
+                       .removeClass('btn-outline-warning border-secondary-subtle');
+                    btn.find('.check-icon').removeClass('d-none');
+                } else {
+                    btn.removeClass('btn-warning text-dark fw-bold border-warning')
+                       .addClass('btn-outline-warning border-secondary-subtle');
+                    btn.find('.check-icon').addClass('d-none');
+                }
+            });
+
+            $('#service_id, #category_filter').on('change', handleServiceChange);
 
             // Initial trigger
             updateModuleView();
