@@ -6902,4 +6902,5 @@ _Message' => 'Customer notification for provider bid offer
   'Customer must answer this question to proceed with booking' => 'Customer must answer this question to proceed with booking',
   'Update_Question' => 'Update Question',
   'Global question updated successfully' => 'Global question updated successfully',
+  'Please select an option for' => 'Please select an option for',
 );

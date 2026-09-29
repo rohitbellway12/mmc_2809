@@ -434,6 +434,59 @@
         .cursor-pointer {
             cursor: pointer;
         }
+        .single-pill-btn {
+            border: 1.5px solid #CBD5E1;
+            background: #FFFFFF;
+            color: #334155;
+            font-weight: 500;
+            padding: 7px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+        .single-pill-btn:hover {
+            border-color: #0461A5;
+            background: #F0F7FF;
+            color: #0461A5;
+            transform: translateY(-1px);
+        }
+        .single-pill-btn.active {
+            border-color: #0461A5 !important;
+            background: #0461A5 !important;
+            color: #FFFFFF !important;
+            font-weight: 600;
+            box-shadow: 0 3px 8px rgba(4, 97, 165, 0.28) !important;
+            transform: translateY(-1px);
+        }
+        .single-pill-btn.active .pill-check-icon {
+            display: inline-block !important;
+        }
+        .single-pill-number {
+            min-width: 48px;
+            height: 38px;
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .visually-hidden-input {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+            opacity: 0 !important;
+        }
     </style>
 
     <script>
@@ -663,9 +716,15 @@
                                     </label>`;
 
                                 if (q.question_type === 'select' && q.options) {
-                                    let opts = q.options.split(',').map(o => o.trim());
+                                    let opts = q.options.split(',').map(o => o.trim()).filter(o => o.length > 0);
                                     let qTextLower = q.question_text.toLowerCase();
                                     let isMulti = qTextLower.includes('select all') || qTextLower.includes('apply') || qTextLower.includes('multiple');
+
+                                    // Render Number of Wheels, Wheel Finish, and other short options as clickable pills/buttons
+                                    let isNumberWheels = (qTextLower.includes('wheel') || qTextLower.includes('tyre')) && 
+                                                         (qTextLower.includes('number') || qTextLower.includes('how many') || opts.every(o => !isNaN(parseInt(o))));
+                                    let isWheelFinish = qTextLower.includes('finish') && !qTextLower.includes('colour') && !qTextLower.includes('color');
+                                    let isPillSelect = isNumberWheels || isWheelFinish || (opts.length <= 6 && !qTextLower.includes('size') && !qTextLower.includes('colour') && !qTextLower.includes('color'));
 
                                     if (isMulti) {
                                         html += `<div class="d-flex flex-wrap gap-2 pt-1">`;
@@ -674,6 +733,17 @@
                                                 <input type="checkbox" name="answers[${q.id}][]" value="${o}" class="d-none chip-checkbox">
                                                 <span class="chip-text">${o}</span>
                                                 <span class="material-icons fs-14 align-middle ms-1 check-icon d-none">check_circle</span>
+                                            </label>`;
+                                        });
+                                        html += `</div>`;
+                                    } else if (isPillSelect) {
+                                        let isNumericOnly = opts.every(o => /^\d+(\s*wheels?|\s*tyres?)?$/i.test(o.trim()));
+                                        html += `<div class="d-flex flex-wrap gap-2 pt-1 single-pill-group" data-required="${q.is_required ? '1' : '0'}">`;
+                                        opts.forEach(function(o) {
+                                            html += `<label class="single-pill-btn ${isNumericOnly ? 'single-pill-number' : ''}">
+                                                <input type="radio" name="answers[${q.id}]" value="${o}" class="visually-hidden-input single-pill-radio">
+                                                <span class="pill-text">${o}</span>
+                                                ${!isNumericOnly ? '<span class="material-icons fs-14 align-middle ms-1 pill-check-icon d-none">check_circle</span>' : ''}
                                             </label>`;
                                         });
                                         html += `</div>`;
@@ -686,12 +756,16 @@
                                         html += `</select>`;
                                     }
                                 } else if (q.question_type === 'yes_no') {
-                                    html += `<select name="answers[${q.id}]" class="form-select" ${q.is_required ? 'required' : ''}>
-                                        <option value="">-- {{ translate('Select') }} --</option>
-                                        <option value="Yes">{{ translate('Yes') }}</option>
-                                        <option value="No">{{ translate('No') }}</option>
-                                        <option value="Not sure">{{ translate('Not sure') }}</option>
-                                    </select>`;
+                                    let yesNoOpts = ['Yes', 'No', 'Not sure'];
+                                    html += `<div class="d-flex flex-wrap gap-2 pt-1 single-pill-group" data-required="${q.is_required ? '1' : '0'}">`;
+                                    yesNoOpts.forEach(function(o) {
+                                        html += `<label class="single-pill-btn">
+                                            <input type="radio" name="answers[${q.id}]" value="${o}" class="visually-hidden-input single-pill-radio">
+                                            <span class="pill-text">${o}</span>
+                                            <span class="material-icons fs-14 align-middle ms-1 pill-check-icon d-none">check_circle</span>
+                                        </label>`;
+                                    });
+                                    html += `</div>`;
                                 } else {
                                     html += `<input type="text" name="answers[${q.id}]" class="form-control" placeholder="{{ translate('Enter details') }}" ${q.is_required ? 'required' : ''}>`;
                                 }
@@ -710,6 +784,58 @@
                     }
                 });
             }
+
+            // Single-pill radio toggle handler
+            $(document).on('change', '.single-pill-radio', function() {
+                let name = $(this).attr('name');
+                $(`input[name="${name}"]`).closest('.single-pill-btn').removeClass('active');
+                if ($(this).is(':checked')) {
+                    $(this).closest('.single-pill-btn').addClass('active');
+                    $(this).closest('.single-pill-group').removeClass('p-2 rounded border border-danger bg-danger-subtle');
+                }
+            });
+
+            // Form validation for required single pill groups
+            $('#estimate_form').on('submit', function(e) {
+                let moduleType = $('input[name="module_type"]:checked').val();
+                if (moduleType === 'general') {
+                    let missing = false;
+                    $('.single-pill-group[data-required="1"]').each(function() {
+                        let checked = $(this).find('input[type="radio"]:checked').val();
+                        if (!checked) {
+                            missing = true;
+                            $(this).addClass('p-2 rounded border border-danger bg-danger-subtle');
+                            let qLabel = $(this).closest('.col-md-6').find('label.form-label').text().replace('*', '').trim();
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('{{ translate("Please select an option for") }}: ' + qLabel);
+                            }
+                        } else {
+                            $(this).removeClass('p-2 rounded border border-danger bg-danger-subtle');
+                        }
+                    });
+                    if (missing) {
+                        e.preventDefault();
+                        let firstErr = $('.single-pill-group.border-danger').first();
+                        if (firstErr.length) {
+                            $('html, body').animate({
+                                scrollTop: firstErr.offset().top - 120
+                            }, 300);
+                        }
+                        return false;
+                    }
+                }
+            });
+
+            // Form reset handler
+            $('#estimate_form').on('reset', function() {
+                setTimeout(function() {
+                    $('.single-pill-btn').removeClass('active');
+                    $('.single-pill-group').removeClass('p-2 rounded border border-danger bg-danger-subtle');
+                    $('.chip-btn').removeClass('btn-warning text-dark fw-bold border-warning')
+                                  .addClass('btn-outline-warning border-secondary-subtle');
+                    $('.chip-btn .check-icon').addClass('d-none');
+                }, 50);
+            });
 
             // Chip checkbox toggle handler for multi-select questions
             $(document).on('change', '.chip-checkbox', function() {

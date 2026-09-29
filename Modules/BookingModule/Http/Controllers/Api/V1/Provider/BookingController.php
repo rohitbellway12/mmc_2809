@@ -154,7 +154,8 @@ class BookingController extends Controller
                 'booking_offline_payments' => function ($query) {
                     $query->first() ?? [];
                 },
-                'carHireBooking.car'
+                'carHireBooking.car',
+                'booking_partial_payments'
             ])
             ->when(!in_array($request['booking_status'], ['pending', 'all']), function ($query) use ($providerId, $request, $maxBookingAmount) {
                 $query->ofBookingStatus($request['booking_status'])
@@ -227,6 +228,27 @@ class BookingController extends Controller
                 $booking->repeats = $booking->repeats->toArray();
             }
             unset($booking->repeat);
+
+            // Partial payment details for mobile app
+            if ($booking->booking_partial_payments && $booking->booking_partial_payments->isNotEmpty()) {
+                $latestPartial = $booking->booking_partial_payments->sortByDesc('created_at')->first();
+                $totalPaid = (float) $booking->booking_partial_payments->sum('paid_amount');
+                $dueAmount = (float) ($latestPartial?->due_amount ?? 0);
+
+                $booking->is_partial = 1;
+                $booking->paid_amount = $totalPaid;
+                $booking->due_amount = $dueAmount;
+                $booking->partial_paid_amount = $totalPaid;
+                $booking->partial_due_amount = $dueAmount;
+            } else {
+                $booking->is_partial = 0;
+                $isPaid = (int) $booking->is_paid;
+                $total = (float) $booking->total_booking_amount;
+                $booking->paid_amount = $isPaid ? $total : 0.0;
+                $booking->due_amount = $isPaid ? 0.0 : $total;
+                $booking->partial_paid_amount = $booking->paid_amount;
+                $booking->partial_due_amount = $booking->due_amount;
+            }
         }
 
         return response()->json(response_formatter(DEFAULT_200, [
