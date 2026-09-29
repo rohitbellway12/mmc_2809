@@ -323,12 +323,7 @@ class PaymentController extends Controller
 
         $total_booking_amount = $this->find_total_Booking_amount($customer_user_id, $request['post_id'], $request['provider_id']);
         $customer_wallet_balance = User::find($customer_user_id)?->wallet_balance;
-        $amount_to_pay = $request['is_partial'] ? ($total_booking_amount - $customer_wallet_balance) : $total_booking_amount;
-
-        //partial validation
-        if (!$is_guest && $request['is_partial'] && ($customer_wallet_balance <= 0 || $customer_wallet_balance >= $total_booking_amount)) {
-            return response()->json(response_formatter(DEFAULT_400), 400);
-        }
+        $amount_to_pay = $request['is_partial'] ? round($total_booking_amount * 0.25, 2) : $total_booking_amount;
 
         //make payment
         $payer = new Payer($customer['first_name'] . ' ' . $customer['last_name'], $customer['email'], $customer['phone'], '');

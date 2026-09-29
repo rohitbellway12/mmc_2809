@@ -112,7 +112,11 @@ class StripePaymentController extends Controller
             $data = $this->payment::where(['id' => $request['payment_id']])->first();
 
             if (isset($data) && function_exists($data->success_hook)) {
-                call_user_func($data->success_hook, $data);
+                try {
+                    call_user_func($data->success_hook, $data);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Stripe success hook exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+                }
             }
 
             return $this->payment_response($data,'success');

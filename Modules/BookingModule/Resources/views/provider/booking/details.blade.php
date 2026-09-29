@@ -123,7 +123,7 @@
                                         <span class="text-{{$booking->is_paid ? 'success' : 'danger'}}"
                                               id="payment_status__span">{{$booking->is_paid ? translate('Paid') : translate('Unpaid')}}</span>
 
-                                        @if(!$booking->is_paid && $booking->booking_partial_payments->isNotEmpty())
+                                        @if($booking->booking_partial_payments->isNotEmpty() && ($booking->booking_partial_payments->sum('due_amount') > 0 || !$booking->is_paid))
                                             <span
                                                 class="small badge badge-info text-success p-1 fz-10">{{translate('Partially paid')}}</span>
                                         @endif
@@ -286,7 +286,13 @@
                                             <?php
                                             $dueAmount = 0;
 
-                                            if (!$booking->is_paid && $booking?->booking_partial_payments?->count() == 1) {
+                                            // Show due amount for partial payments (even if is_paid=1, because 25% was paid digitally, 75% still due)
+                                            if ($booking->booking_partial_payments->isNotEmpty()) {
+                                                $partialDue = $booking->booking_partial_payments->sum('due_amount');
+                                                if ($partialDue > 0) {
+                                                    $dueAmount = $partialDue;
+                                                }
+                                            } elseif (!$booking->is_paid && $booking?->booking_partial_payments?->count() == 1) {
                                                 $dueAmount = $booking->booking_partial_payments->first()?->due_amount;
                                             }
 

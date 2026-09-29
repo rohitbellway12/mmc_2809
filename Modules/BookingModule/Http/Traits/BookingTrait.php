@@ -51,11 +51,8 @@ trait BookingTrait
         }
 
 
-        $isPartials = $request['is_partial'] ? 1 : 0;
+        $isPartials = isset($request['is_partial']) && $request['is_partial'] == 1 ? 1 : 0;
         $customerWalletBalance = User::find($userId)?->wallet_balance;
-        if ($isPartials && $isGuest && ($customerWalletBalance <= 0 || $customerWalletBalance >= $cartData->sum('total_cost'))) {
-            return ['flag' => 'failed', 'message' => 'Invalid data'];
-        }
 
         $loginToken = null;
         $bookingIds = [];
@@ -180,24 +177,15 @@ trait BookingTrait
                 }
 
                 if ($isPartials) {
-                    $paidAmount = $customerWalletBalance;
-                    $due_amount = $totalBookingAmount - $paidAmount;
+                    $paidAmount = round($totalBookingAmount * 0.25, 2);
+                    $due_amount = round($totalBookingAmount - $paidAmount, 2);
 
                     $bookingPartialPayment = new BookingPartialPayment;
                     $bookingPartialPayment->booking_id = $booking->id;
-                    $bookingPartialPayment->paid_with = 'wallet';
+                    $bookingPartialPayment->paid_with = $request['payment_method'] ?? 'digital';
                     $bookingPartialPayment->paid_amount = $paidAmount;
                     $bookingPartialPayment->due_amount = $due_amount;
                     $bookingPartialPayment->save();
-
-                    if ($request['payment_method'] != 'cash_after_service') {
-                        $bookingPartialPayment = new BookingPartialPayment;
-                        $bookingPartialPayment->booking_id = $booking->id;
-                        $bookingPartialPayment->paid_with = $request['payment_method'];
-                        $bookingPartialPayment->paid_amount = $due_amount;
-                        $bookingPartialPayment->due_amount = 0;
-                        $bookingPartialPayment->save();
-                    }
                 }
 
                 foreach ($cartData->all() as $datum) {
@@ -719,12 +707,19 @@ trait BookingTrait
     {
         $booking = new Booking();
 
+        // Normalize $request to array to handle both Request object and Collection
+        if ($request instanceof \Illuminate\Support\Collection) {
+            $request = $request->toArray();
+        } elseif ($request instanceof \Illuminate\Http\Request) {
+            $request = $request->all();
+        }
+
         DB::transaction(function () use ($booking, $transactionId, $request, $customerUserId, $data) {
 
-            if ($request->has('payment_method') && $request['payment_method'] == 'cash_after_service') {
+            if (isset($request['payment_method']) && $request['payment_method'] == 'cash_after_service') {
                 $transactionId = 'cash-payment';
 
-            } else if ($request->has('payment_method') && $request['payment_method'] == 'wallet_payment') {
+            } else if (isset($request['payment_method']) && $request['payment_method'] == 'wallet_payment') {
                 $transactionId = 'wallet-payment';
             }
 
@@ -738,11 +733,8 @@ trait BookingTrait
             $tax = !is_null($data['service_tax']) ? round((($data['price'] * $data['service_tax']) / 100) * 1, 2) : 0; //
 
             $totalBookingAmount += $tax;
-            $isPartials = $data['is_partial'] ? 1 : 0;
+            $isPartials = isset($data['is_partial']) && $data['is_partial'] == 1 ? 1 : 0;
             $customerWalletBalance = User::find($customerUserId)?->wallet_balance;
-            if ($isPartials && ($customerWalletBalance <= 0 || $customerWalletBalance >= $totalBookingAmount)) {
-                return ['flag' => 'failed', 'message' => 'Invalid data'];
-            }
 
             $bookingAdditionalChargeStatus = business_config('booking_additional_charge', 'booking_setup')->live_values ?? 0;
             $extraFee = 0;
@@ -777,7 +769,7 @@ trait BookingTrait
             $booking->sub_category_id = $data['sub_category_id'];
             $booking->zone_id = $data['zone_id'];
             $booking->booking_status = 'accepted';
-            $booking->is_paid = $data['payment_method'] == 'cash_after_service' || $request['payment_method'] == 'offline_payment' ? 0 : 1;
+            $booking->is_paid = in_array($data['payment_method'], ['cash_after_service', 'offline_payment']) ? 0 : 1;
             $booking->payment_method = $data['payment_method'];
             $booking->transaction_id = $transactionId;
             $booking->total_booking_amount = $totalBookingAmount;
@@ -802,8 +794,8 @@ trait BookingTrait
                 }
             }
 
-            $booking->booking_type = $request->booking_type ?? 'normal';
-            $booking->selected_slot_id = $request->selected_slot_id;
+            $booking->booking_type = $request['booking_type'] ?? 'normal';
+            $booking->selected_slot_id = $request['selected_slot_id'] ?? null;
 
             $booking->save();
 
@@ -838,24 +830,15 @@ trait BookingTrait
             }
 
             if ($isPartials) {
-                $paidAmount = $customerWalletBalance;
-                $due_amount = $totalBookingAmount - $paidAmount;
+                $paidAmount = round($totalBookingAmount * 0.25, 2);
+                $due_amount = round($totalBookingAmount - $paidAmount, 2);
 
                 $bookingPartialPayment = new BookingPartialPayment;
                 $bookingPartialPayment->booking_id = $booking->id;
-                $bookingPartialPayment->paid_with = 'wallet';
+                $bookingPartialPayment->paid_with = $data['payment_method'] ?? 'digital';
                 $bookingPartialPayment->paid_amount = $paidAmount;
                 $bookingPartialPayment->due_amount = $due_amount;
                 $bookingPartialPayment->save();
-
-                if ($request['payment_method'] != 'cash_after_service') {
-                    $bookingPartialPayment = new BookingPartialPayment;
-                    $bookingPartialPayment->booking_id = $booking->id;
-                    $bookingPartialPayment->paid_with = 'digital';
-                    $bookingPartialPayment->paid_amount = $due_amount;
-                    $bookingPartialPayment->due_amount = 0;
-                    $bookingPartialPayment->save();
-                }
             }
 
             $serviceCount = max(1, $postServices->count());
@@ -945,6 +928,10 @@ trait BookingTrait
                 }
             }
         });
+
+        // Fire BookingRequested event → sends customer confirmation email + push notification
+        $booking->load('customer');
+        event(new BookingRequested($booking));
 
         return [
             'flag' => 'success',

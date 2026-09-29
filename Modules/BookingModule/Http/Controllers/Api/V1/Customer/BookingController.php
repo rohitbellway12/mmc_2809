@@ -275,11 +275,26 @@ class BookingController extends Controller
                 $query_params = array_merge($query_params, $newUserInfo);
             }
 
+            if (isset($request['post_id']) && !empty($request['post_id'])) {
+                $postBid = PostBid::where('post_id', $request['post_id'])
+                    ->where('provider_id', $request['provider_id'])
+                    ->first();
+                if (!$postBid) {
+                    $postBid = PostBid::where('post_id', $request['post_id'])->first();
+                }
+                if (!$postBid) {
+                    $post = \Modules\BidModule\Entities\Post::find($request['post_id']);
+                    if (!$post) {
+                        return response()->json(response_formatter(DEFAULT_404, null, 'Post not found'), 404);
+                    }
+                }
+            }
+
             try {
                 $total_booking_amount = $this->find_total_Booking_amount($customerUserId, $request['post_id'], $request['provider_id']);
                 $user = User::find($customerUserId);
                 $customer_wallet_balance = $user ? $user->wallet_balance : 0;
-                $amount_to_pay = $request['is_partial'] ? ($total_booking_amount - $customer_wallet_balance) : $total_booking_amount;
+                $amount_to_pay = $request['is_partial'] ? round($total_booking_amount * 0.25, 2) : $total_booking_amount;
 
                 $payer = new Payer($customer['first_name'] . ' ' . $customer['last_name'], $customer['email'], $customer['phone'], '');
                 $payment_info = new Payment(
@@ -979,18 +994,22 @@ class BookingController extends Controller
             parse_str(str_replace('&&', '&', $token_data), $output);
             $request->merge([
                 'transaction_id' => $output['transaction_reference'] ?? null,
+                'attribute_id' => $output['attribute_id'] ?? null,
             ]);
         }
 
-        $validator = Validator::make($request->all(), [
-            'transaction_id' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        $payment_info = null;
+        if ($request->has('transaction_id') && !empty($request->transaction_id)) {
+            $payment_info = PaymentRequest::where('transaction_id', $request->transaction_id)->first();
         }
 
-        $payment_info = PaymentRequest::where('transaction_id', $request->transaction_id)->first();
+        if (!$payment_info && $request->has('attribute_id') && !empty($request->attribute_id)) {
+            $payment_info = PaymentRequest::where('attribute_id', $request->attribute_id)->first();
+        }
+
+        if (!$payment_info && $request->has('payment_id') && !empty($request->payment_id)) {
+            $payment_info = PaymentRequest::where('id', $request->payment_id)->first();
+        }
 
         if (!$payment_info) {
             return response()->json(response_formatter(DEFAULT_204), 200);
@@ -1007,7 +1026,9 @@ class BookingController extends Controller
         $car_booking = null;
         if (isset($payment_info) && $payment_info->attribute_id != null) {
             if ($payment_info->attribute === 'booking' || $payment_info->attribute === 'booking_id') {
-                $booking = Booking::where('readable_id', $payment_info->attribute_id)->first();
+                $booking = Booking::where('readable_id', $payment_info->attribute_id)
+                    ->orWhere('id', $payment_info->attribute_id)
+                    ->first();
                 $booking_id = $booking ? $booking->id : null;
             } elseif ($payment_info->attribute === 'car_booking_id') {
                 $car_booking = \Modules\CarHire\Entities\CarBooking::find($payment_info->attribute_id);
@@ -1015,6 +1036,21 @@ class BookingController extends Controller
                     $booking_id = $car_booking->booking_id; // Linked regular booking
                     $booking = Booking::find($booking_id);
                 }
+            }
+        }
+
+        // Fallback: If booking was not found by attribute_id (e.g. timestamp attribute_id), search by transaction_id or customer_id
+        if (!$booking && $payment_info) {
+            $customer_id = $payment_info->payer_id;
+            $booking = Booking::where('transaction_id', $payment_info->transaction_id)->first();
+            if (!$booking && !empty($customer_id)) {
+                $booking = Booking::where('customer_id', $customer_id)->latest()->first();
+            }
+            if ($booking) {
+                $booking_id = $booking->id;
+                $payment_info->attribute = 'booking';
+                $payment_info->attribute_id = $booking->readable_id;
+                $payment_info->save();
             }
         }
 

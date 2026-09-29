@@ -52,6 +52,8 @@ class PaymentResponse
             'phone' => $additional_data['phone'] ?? null,
             'password' => $additional_data['password'] ?? null,
             'service_location' => $additional_data['service_location'] ?? 'customer',
+            'booking_type' => $additional_data['booking_type'] ?? 'normal',
+            'selected_slot_id' => $additional_data['selected_slot_id'] ?? null,
         ]);
 
         if (!$request->has('post_id') || is_null($request['post_id'])) {
@@ -65,24 +67,55 @@ class PaymentResponse
                 ->where('provider_id', $request['provider_id'])
                 ->first();
 
-            $data = [
-                'post_id' => $request['post_id'],
-                'payment_method' => $request['payment_method'],
-                'zone_id' => $request['zone_id'],
-                'service_tax' => $post_bid?->post?->service?->tax,
-                'provider_id' => $post_bid?->provider_id,
-                'price' => $post_bid?->offered_price,
-                'service_schedule' => !is_null($request['service_schedule']) ? $request['service_schedule'] : $post_bid->post->booking_schedule,
-                'service_id' => $post_bid->post->service_id,
-                'category_id' => $post_bid->post->category_id,
-                'sub_category_id' => $post_bid->post->category_id,
-                'service_address_id' => !is_null($request['service_address_id']) ? $request['service_address_id'] : $post_bid->post->service_address_id,
-                'is_partial' => $request['is_partial']
-            ];
+            if (!$post_bid) {
+                $post_bid = PostBid::with(['post'])
+                    ->where('post_id', $request['post_id'])
+                    ->first();
+            }
 
-            $response = (new PaymentResponse)->placeBookingRequestForBidding(base64_decode($request['access_token']), $request, $tran_id, $data);
-            if ($response['flag'] == 'success') {
-                PostBidController::acceptPostBidOffer($post_bid->id, $response['booking_id']);
+            if ($post_bid) {
+                $data = [
+                    'post_id' => $request['post_id'],
+                    'payment_method' => $request['payment_method'],
+                    'zone_id' => $request['zone_id'],
+                    'service_tax' => $post_bid?->post?->service?->tax ?? 0,
+                    'provider_id' => $request['provider_id'] ?? $post_bid?->provider_id,
+                    'price' => $post_bid?->offered_price,
+                    'service_schedule' => !is_null($request['service_schedule']) ? $request['service_schedule'] : $post_bid?->post?->booking_schedule,
+                    'service_id' => $post_bid?->post?->service_id,
+                    'category_id' => $post_bid?->post?->category_id,
+                    'sub_category_id' => $post_bid?->post?->sub_category_id ?? $post_bid?->post?->category_id,
+                    'service_address_id' => !is_null($request['service_address_id']) ? $request['service_address_id'] : $post_bid?->post?->service_address_id,
+                    'is_partial' => $request['is_partial'] ?? 0
+                ];
+
+                $userIdToUse = !empty($customer_user_id) ? $customer_user_id : (base64_decode($request['access_token']) ?: $request['access_token']);
+                $response = (new PaymentResponse)->placeBookingRequestForBidding($userIdToUse, $request, $tran_id, $data);
+                if (isset($response['flag']) && $response['flag'] == 'success') {
+                    PostBidController::acceptPostBidOffer($post_bid->id, $response['booking_id']);
+                }
+            } else {
+                $post = \Modules\BidModule\Entities\Post::with(['service'])->find($request['post_id']);
+                if ($post) {
+                    $data = [
+                        'post_id' => $post->id,
+                        'payment_method' => $request['payment_method'],
+                        'zone_id' => $request['zone_id'],
+                        'service_tax' => $post?->service?->tax ?? 0,
+                        'provider_id' => $request['provider_id'],
+                        'price' => 0,
+                        'service_schedule' => $request['service_schedule'] ?? $post->booking_schedule,
+                        'service_id' => $post->service_id,
+                        'category_id' => $post->category_id,
+                        'sub_category_id' => $post->sub_category_id ?? $post->category_id,
+                        'service_address_id' => $request['service_address_id'] ?? $post->service_address_id,
+                        'is_partial' => $request['is_partial'] ?? 0
+                    ];
+                    $userIdToUse = !empty($customer_user_id) ? $customer_user_id : (base64_decode($request['access_token']) ?: $request['access_token']);
+                    $response = (new PaymentResponse)->placeBookingRequestForBidding($userIdToUse, $request, $tran_id, $data);
+                } else {
+                    $response = ['flag' => 'failed', 'message' => 'Post not found'];
+                }
             }
         }
 
@@ -102,11 +135,13 @@ class PaymentResponse
 //        }
 
         //update payment request
-        if ($response['flag'] == 'success' && $response['readable_id']) {
+        if (isset($response['flag']) && in_array($response['flag'], ['success', 'booking_placed']) && !empty($response['readable_id'])) {
             $payment_request = PaymentRequest::find($payment_request_id);
-            $payment_request->attribute = 'booking';
-            $payment_request->attribute_id = $response['readable_id'];
-            $payment_request->save();
+            if ($payment_request) {
+                $payment_request->attribute = 'booking';
+                $payment_request->attribute_id = $response['readable_id'];
+                $payment_request->save();
+            }
         }
 
         $response['callback'] = $request['callback'];
