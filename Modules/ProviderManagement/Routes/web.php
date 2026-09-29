@@ -74,6 +74,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin',
             Route::get('/', 'CategoryQuestionController@index')->name('index');
             Route::post('/', 'CategoryQuestionController@store')->name('store');
             Route::put('/status', 'CategoryQuestionController@updateStatus')->name('update_status');
+            Route::put('/{id}', 'CategoryQuestionController@update')->name('update');
             Route::delete('/{id}', 'CategoryQuestionController@destroy')->name('destroy');
         });
     });

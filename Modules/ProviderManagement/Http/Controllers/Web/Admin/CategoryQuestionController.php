@@ -85,6 +85,44 @@ class CategoryQuestionController extends Controller
     }
 
     /**
+     * Update an existing global question
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'question_text' => 'required|string|max:500',
+            'question_type' => 'required|in:yes_no,text,select,file',
+            'options' => 'required_if:question_type,select|nullable|string',
+            'category_id' => 'required|uuid|exists:categories,id',
+            'is_required' => 'required|in:0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        try {
+            $question = $this->question->where('id', $id)->whereNull('provider_id')->first();
+
+            if (!$question) {
+                return response()->json(response_formatter(DEFAULT_404), 404);
+            }
+
+            $question->update([
+                'category_id' => $request->category_id,
+                'question_text' => $request->question_text,
+                'options' => $request->question_type == 'select' ? $request->options : null,
+                'question_type' => $request->question_type,
+                'is_required' => $request->is_required,
+            ]);
+
+            return response()->json(response_formatter(DEFAULT_UPDATE_200), 200);
+        } catch (\Exception $e) {
+            return response()->json(response_formatter(DEFAULT_400, null, [['error_code' => 'exception', 'message' => $e->getMessage()]]), 400);
+        }
+    }
+
+    /**
      * Update question status
      */
     public function updateStatus(Request $request): JsonResponse

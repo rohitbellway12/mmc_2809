@@ -284,10 +284,22 @@
                                                     </label>
                                                 </td>
                                                 <td class="text-center">
-                                                    <button type="button" class="action-btn btn--danger delete-question"
-                                                        data-id="{{ $question->id }}" style="--size: 30px">
-                                                        <span class="material-symbols-outlined">delete</span>
-                                                    </button>
+                                                    <div class="d-flex justify-content-center gap-2">
+                                                        <button type="button" class="action-btn btn--primary edit-question"
+                                                            data-id="{{ $question->id }}"
+                                                            data-text="{{ htmlspecialchars($question->question_text, ENT_QUOTES) }}"
+                                                            data-category="{{ $question->category_id }}"
+                                                            data-type="{{ $question->question_type }}"
+                                                            data-options="{{ htmlspecialchars($question->options ?? '', ENT_QUOTES) }}"
+                                                            data-required="{{ $question->is_required ? 1 : 0 }}"
+                                                            style="--size: 30px" title="{{ translate('Edit') }}">
+                                                            <span class="material-symbols-outlined">edit</span>
+                                                        </button>
+                                                        <button type="button" class="action-btn btn--danger delete-question"
+                                                            data-id="{{ $question->id }}" style="--size: 30px" title="{{ translate('Delete') }}">
+                                                            <span class="material-symbols-outlined">delete</span>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty
@@ -309,6 +321,79 @@
                         </div>
                     @endif
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Question Modal -->
+    <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="editQuestionModalLabel">
+                        <span class="material-icons text-primary">edit</span>
+                        {{ translate('Edit_Global_Question') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="edit-question-form">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" id="edit_question_id">
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('Question_Text') }} <span class="text-danger">*</span></label>
+                                    <textarea name="question_text" id="edit_question_text" class="form-control" rows="2" required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('Category') }} <span class="text-danger">*</span></label>
+                                    <select name="category_id" id="edit_category_id" class="form-control form-select" required>
+                                        <option value="" disabled>{{ translate('Select_Category') }}</option>
+                                        @foreach ($categories as $category)
+                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('Question_Type') }} <span class="text-danger">*</span></label>
+                                    <select name="question_type" id="edit_question_type" class="form-control form-select" required>
+                                        <option value="select">{{ translate('Dropdown_/_Multiple_Choice') }}</option>
+                                        <option value="text">{{ translate('Short_Text_Answer') }}</option>
+                                        <option value="yes_no">{{ translate('Yes_/_No') }}</option>
+                                        <option value="file">{{ translate('File_/_Image_Upload') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id="edit_options_section">
+                                <div class="form-group mb-0">
+                                    <label class="form-label mb-2">{{ translate('Options_(Comma_Separated)') }} <span class="text-danger">*</span></label>
+                                    <textarea name="options" id="edit_options" class="form-control" rows="4"
+                                        placeholder="{{ translate('e.g., 1 Wheel, 2 Wheels, 3 Wheels, 4 Wheels') }}"></textarea>
+                                    <small class="text-muted">{{ translate('Enter options separated by comma') }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="is_required" id="edit_is_required" value="1">
+                                    <label class="form-check-label" for="edit_is_required">
+                                        <strong>{{ translate('Is_Required') }}</strong>
+                                        <span class="text-muted d-block fs-12">{{ translate('Customer must answer this question to proceed with booking') }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ translate('Cancel') }}</button>
+                        <button type="submit" class="btn btn--primary">{{ translate('Update_Question') }}</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -414,6 +499,82 @@
                             toastr.error('{{ translate('Failed to delete question') }}');
                         }
                     });
+                }
+            });
+        });
+
+        // Open Edit Modal
+        $(document).on('click', '.edit-question', function() {
+            let id = $(this).data('id');
+            let text = $(this).data('text');
+            let category = $(this).data('category');
+            let type = $(this).data('type');
+            let options = $(this).data('options');
+            let required = $(this).data('required');
+
+            $('#edit_question_id').val(id);
+            $('#edit_question_text').val(text);
+            $('#edit_category_id').val(category);
+            $('#edit_question_type').val(type);
+            $('#edit_options').val(options || '');
+            $('#edit_is_required').prop('checked', required == 1);
+
+            if (type === 'select') {
+                $('#edit_options_section').removeClass('d-none');
+                $('#edit_options').attr('required', true);
+            } else {
+                $('#edit_options_section').addClass('d-none');
+                $('#edit_options').attr('required', false);
+            }
+
+            $('#editQuestionModal').modal('show');
+        });
+
+        // Toggle edit options section on type change
+        $('#edit_question_type').on('change', function() {
+            if ($(this).val() === 'select') {
+                $('#edit_options_section').removeClass('d-none');
+                $('#edit_options').attr('required', true);
+            } else {
+                $('#edit_options_section').addClass('d-none');
+                $('#edit_options').attr('required', false);
+            }
+        });
+
+        // Submit Edit Form
+        $('#edit-question-form').on('submit', function(e) {
+            e.preventDefault();
+            let questionId = $('#edit_question_id').val();
+            let url = '{{ route('admin.provider.category_questions.update', ':id') }}'.replace(':id', questionId);
+
+            let formData = {
+                _token: '{{ csrf_token() }}',
+                _method: 'PUT',
+                question_text: $('#edit_question_text').val(),
+                category_id: $('#edit_category_id').val(),
+                question_type: $('#edit_question_type').val(),
+                options: $('#edit_options').val(),
+                is_required: $('#edit_is_required').is(':checked') ? 1 : 0
+            };
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: formData,
+                success: function(response) {
+                    toastr.success('{{ translate('Global question updated successfully') }}');
+                    $('#editQuestionModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errors = xhr.responseJSON.errors;
+                        Object.keys(errors).forEach(key => {
+                            toastr.error(errors[key][0]);
+                        });
+                    } else {
+                        toastr.error('{{ translate('Something went wrong') }}');
+                    }
                 }
             });
         });
