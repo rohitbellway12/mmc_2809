@@ -57,20 +57,7 @@
                                                         @endif
                                                         @if ($language)
                                                             <div class="mb-30 lang-form" id="default-form">
-                                                                <button type="button"
-                                                                    class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 auto_fill_title title-btn-wrapper"
-                                                                    id="title-default-action-btn" data-lang="default"
-                                                                    data-route="{{ route('admin.product.title-auto-fill') }}">
-                                                                    <div class="btn-svg-wrapper">
-                                                                        <img width="18" height="18" class=""
-                                                                            src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                            alt="">
-                                                                    </div>
-                                                                    <span class="ai-text-animation d-none"
-                                                                        role="status">{{ translate('Just_a_second') }}</span>
-                                                                    <span
-                                                                        class="btn-text">{{ translate('Generate') }}</span>
-                                                                </button>
+                                                                
                                                                 <div
                                                                     class="form-floating form-floating__icon outline-wrapper title-container-default">
                                                                     <input type="text" name="name[]" id="default_name"
@@ -85,22 +72,7 @@
                                                             @foreach ($language?->live_values as $lang)
                                                                 <div class="mb-30 d-none lang-form"
                                                                     id="{{ $lang['code'] }}-form">
-                                                                    <button type="button"
-                                                                        class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 auto_fill_title title-btn-wrapper"
-                                                                        id="title-{{ $lang['code'] }}-action-btn"
-                                                                        data-route="{{ route('admin.product.title-auto-fill') }}"
-                                                                        data-lang="{{ $lang['code'] }}">
-                                                                        <div class="btn-svg-wrapper">
-                                                                            <img width="18" height="18"
-                                                                                class=""
-                                                                                src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                                alt="">
-                                                                        </div>
-                                                                        <span class="ai-text-animation d-none"
-                                                                            role="status">{{ translate('Just_a_second') }}</span>
-                                                                        <span
-                                                                            class="btn-text">{{ translate('Generate') }}</span>
-                                                                    </button>
+                                                                    
                                                                     <div
                                                                         class="form-floating form-floating__icon outline-wrapper title-container-{{ $lang['code'] }}">
 
@@ -130,19 +102,7 @@
                                                                 </div>
                                                             </div>
                                                             <input type="hidden" name="lang[]" value="default">
-                                                            <button type="button"
-                                                                class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 auto_fill_title title-btn-wrapper"
-                                                                id="title-en-action-btn" data-lang="en"
-                                                                data-route="{{ route('admin.product.title-auto-fill') }}">
-                                                                <div class="btn-svg-wrapper">
-                                                                    <img width="18" height="18" class=""
-                                                                        src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                        alt="">
-                                                                </div>
-                                                                <span class="ai-text-animation d-none"
-                                                                    role="status">{{ translate('Just_a_second') }}</span>
-                                                                <span class="btn-text">{{ translate('Generate') }}</span>
-                                                            </button>
+                                                            
                                                         @endif
 
                                                         <!-- shortDescription -->
@@ -154,22 +114,7 @@
                                                                         <label
                                                                             class="m-0 lh-1">{{ translate('short_description') }}({{ translate('default') }})
                                                                             *</label>
-                                                                        <button type="button"
-                                                                            class="btn bg-white mb-0 text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 auto_fill_short_description short-description-btn-wrapper"
-                                                                            id="short-description-default-action-btn"
-                                                                            data-lang="default"
-                                                                            data-route="{{ route('admin.product.short-description-auto-fill') }}">
-                                                                            <div class="btn-svg-wrapper">
-                                                                                <img width="18" height="18"
-                                                                                    class=""
-                                                                                    src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                                    alt="">
-                                                                            </div>
-                                                                            <span class="ai-text-animation d-none"
-                                                                                role="status">{{ translate('Just_a_second') }}</span>
-                                                                            <span
-                                                                                class="btn-text">{{ translate('Generate') }}</span>
-                                                                        </button>
+                                                                        
                                                                     </div>
                                                                     <div class="outline-wrapper" id="">
                                                                         <textarea type="text" class="form-control default_short_description" name="short_description[]" ></textarea>
@@ -192,22 +137,7 @@
                                                                                 <label
                                                                                     class="m-0">{{ translate('short_description') }}({{ strtoupper($lang['code']) }})
                                                                                     *</label>
-                                                                                <button type="button"
-                                                                                    class="btn bg-white text-primary bg-transparent shadow-none border-0 mb-0 opacity-1 generate_btn_wrapper p-0 auto_fill_short_description short-description-btn-wrapper"
-                                                                                    id="short-description-{{ $lang['code'] }}-action-btn"
-                                                                                    data-lang="{{ $lang['code'] }}"
-                                                                                    data-route="{{ route('admin.product.short-description-auto-fill') }}">
-                                                                                    <div class="btn-svg-wrapper">
-                                                                                        <img width="18" height="18"
-                                                                                            class=""
-                                                                                            src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                                            alt="">
-                                                                                    </div>
-                                                                                    <span class="ai-text-animation d-none"
-                                                                                        role="status">{{ translate('Just_a_second') }}</span>
-                                                                                    <span
-                                                                                        class="btn-text">{{ translate('Generate') }}</span>
-                                                                                </button>
+                                                                                
                                                                             </div>
 
                                                                             <div class="form-floating outline-wrapper">
@@ -233,20 +163,7 @@
                                                                     </div>
                                                                 </div>
 
-                                                                <button type="button"
-                                                                    class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 auto_fill_short_description short-description-btn-wrapper"
-                                                                    id="short-description-en-action-btn" data-lang="en"
-                                                                    data-route="{{ route('admin.product.short-description-auto-fill') }}">
-                                                                    <div class="btn-svg-wrapper">
-                                                                        <img width="18" height="18" class=""
-                                                                            src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                            alt="">
-                                                                    </div>
-                                                                    <span class="ai-text-animation d-none"
-                                                                        role="status">{{ translate('Just_a_second') }}</span>
-                                                                    <span
-                                                                        class="btn-text">{{ translate('Generate') }}</span>
-                                                                </button>
+                                                                
 
                                                                 <!-- Removed Long Description (English) -->
                                                                 <input type="hidden" name="description[]"
@@ -266,20 +183,7 @@
                                         <div class="outline-wrapper">
                                             <div class="card bg-animate">
                                                 <div class="card-body">
-                                                    <button type="button"
-                                                        class="btn bg-white text-primary mt-0 mb-md-0 mb-2 bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 general_setup_auto_fill"
-                                                        id="general_setup_auto_fill"
-                                                        data-route="{{ route('admin.product.general-setup-auto-fill') }}"
-                                                        data-lang="default">
-                                                        <div class="btn-svg-wrapper">
-                                                            <img width="18" height="18" class=""
-                                                                src="{{ asset(path: 'public/assets/admin-module/img/ai//blink-right-small.svg') }}"
-                                                                alt="">
-                                                        </div>
-                                                        <span class="ai-text-animation d-none"
-                                                            role="status">{{ translate('Just_a_second') }}</span>
-                                                        <span class="btn-text">{{ translate('Generate') }}</span>
-                                                    </button>
+                                                    
                                                     <div class="mb-20 max-w-500">
                                                         <h3 class="mb-1 text-dark">{{ translate('General Setup') }}
                                                         </h3>
@@ -368,20 +272,7 @@
                                                     <div class="outline-wrapper">
                                                         <div class="card bg-animate border-0 shadow-none bg-light">
                                                             <div class="card-body">
-                                                                <button type="button"
-                                                                    class="btn bg-white text-primary bg-transparent shadow-none border-0 opacity-1 generate_btn_wrapper p-0 variation_setup_auto_fill"
-                                                                    id="description-en-action-btn" data-lang="en"
-                                                                    data-route="{{ route('admin.product.variation-setup-auto-fill') }}">
-                                                                    <div class="btn-svg-wrapper">
-                                                                        <img width="18" height="18" class=""
-                                                                            src="{{ asset(path: 'public/assets/admin-module/img/ai/blink-right-small.svg') }}"
-                                                                            alt="">
-                                                                    </div>
-                                                                    <span class="ai-text-animation d-none"
-                                                                        role="status">{{ translate('Just_a_second') }}</span>
-                                                                    <span
-                                                                        class="btn-text">{{ translate('Generate') }}</span>
-                                                                </button>
+                                                                
                                                                 <div class="p-xxl-20 p-12px rounded">
                                                                     <div class="d-flex flex-wrap gap-20 mb-0">
                                                                         <div class="form-floating flex-grow-1">
@@ -447,25 +338,10 @@
             </div>
         </div>
 
-        @include('servicemanagement::admin.partials.ai-sidebar')
+        
 
         {{-- AI assistant --}}
-        <div class="floating-ai-button">
-            <button type="button" class="btn btn-lg rounded-circle shadow-lg position-relative" data-bs-toggle="modal"
-                data-bs-target="#aiAssistantModal" data-action="main" title="AI Assistant">
-                <span class="ai-btn-animation">
-                    <span class="gradientCirc"></span>
-                </span>
-                <span class="position-relative z-1 text-white-absolute d-flex flex-column gap-1 align-items-center">
-                    <img width="16" height="17"
-                        src="{{ asset(path: 'public/assets/admin-module/img/ai/hexa-ai.svg') }}" alt="">
-                    <span class="fs-12 fw-semibold">{{ translate('Use_AI') }}</span>
-                </span>
-            </button>
-            <div class="ai-tooltip">
-                <span>{{ translate('AI_Assistant') }}</span>
-            </div>
-        </div>
+        
     </div>
 @endsection
 
@@ -477,12 +353,12 @@
     <script src="{{ asset('public/assets/ckeditor/jquery.js') }}"></script>
 
     {{-- AI --}}
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/ai-sidebar.js') }}"></script>
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/general-setup.js') }}"></script>
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/product-short-description-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/product-description-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/product-title-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin-module/js/AI/products/product-variation-setup.js') }}"></script>
+    
+    
+    
+    
+    
+    
     <script src="{{ asset('public/assets/admin-module/js/AI/image-compressor/image-compressor.js') }}"></script>
     <script src="{{ asset('public/assets/admin-module/js/AI/image-compressor/compressor.min.js') }}"></script>
     <script>
