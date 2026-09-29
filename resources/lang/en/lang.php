@@ -3310,7 +3310,7 @@ _Message' => 'Customer notification for provider bid offer
   'Documentation' => 'Documentation',
   'If disabled customers and provider will not receive notifications on their devices' => 'If disabled customers and provider will not receive notifications on their devices',
   'click_this_icon_to_start_pin_points_in_the_map_and_connect_them_to_draw_a_
-                                                        zone_._Minimum_3_points_required' => 'Click this icon to start pin points in the map and connect them to draw a
+                                                        zone_._Minimum_3_points_required' => 'Click this icon to start pin points in the map and connect them to draw a 
                                                         zone . Minimum 3 points required',
   'successfully deleted' => 'Successfully deleted',
   'amity_briggs' => 'Amity briggs',
@@ -6545,9 +6545,6 @@ _Message' => 'Customer notification for provider bid offer
   'Min Booking Amount' => 'Min Booking Amount',
   'Max Booking Amount' => 'Max Booking Amount',
   'Edit Business Page' => 'Edit Business Page',
-  'click_this_icon_to_start_pin_points_in_the_map_and_connect_them_to_draw_a_
-                                                        zone_._Minimum_3_points_required' => 'Click this icon to start pin points in the map and connect them to draw a 
-                                                        zone . Minimum 3 points required',
   'minimum_3_points_required' => 'Minimum 3 points required',
   'draw_zone' => 'Draw zone',
   'finish_drawing' => 'Finish drawing',
@@ -6874,4 +6871,7 @@ _Message' => 'Customer notification for provider bid offer
   'Great news! A customer has accepted your quotation offer.' => 'Great news! A customer has accepted your quotation offer.',
   'Accepted Price' => 'Accepted Price',
   'Please log in to your provider dashboard to view details and proceed with the service.' => 'Please log in to your provider dashboard to view details and proceed with the service.',
+  'Service Image' => 'Service Image',
+  'Optional (1:1 Ratio)' => 'Optional (1:1 Ratio)',
+  'image_format_-_jpg,_png,_jpeg,_gif_image_size_-_maximum_size_2_MB' => 'Image format - jpg, png, jpeg, gif image size - maximum size 2 MB',
 );

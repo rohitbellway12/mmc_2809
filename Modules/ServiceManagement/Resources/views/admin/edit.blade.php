@@ -204,8 +204,34 @@
 
 
                                             </div>
-                                            <div class="col-xxl-3 col-lg-4 mb-5 mb-sm-0 d-none">
-                                                <!-- Removed Image Uploads -->
+                                            <div class="col-xxl-3 col-lg-4 mb-5 mb-sm-0">
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <div class="d-flex flex-column align-items-center gap-3">
+                                                            <div class="text-center">
+                                                                <h3 class="mb-1 text-dark">{{ translate('Service Image') }}</h3>
+                                                                <p class="fs-12 text-muted mb-0">{{ translate('Optional (1:1 Ratio)') }}</p>
+                                                            </div>
+                                                            <div class="upload-file">
+                                                                <input type="file" class="upload-file__input" name="thumbnail"
+                                                                    accept=".{{ implode(',.', array_column(IMAGEEXTENSION, 'key')) }}, |image/*">
+                                                                <div class="upload-file__img">
+                                                                    <img src="{{ onErrorImage(
+                                                                        $service->thumbnail,
+                                                                        asset('storage/app/public/service') . '/' . $service->thumbnail,
+                                                                        asset('public/assets/admin-module/img/media/upload-file.png'),
+                                                                        'service/',
+                                                                    ) }}"
+                                                                        alt="{{ translate('image') }}">
+                                                                </div>
+                                                                <span class="upload-file__edit">
+                                                                    <span class="material-icons">edit</span>
+                                                                </span>
+                                                            </div>
+                                                            <p class="opacity-75 fs-12 text-center">{{ translate('image_format_-_jpg,_png,_jpeg,_gif_image_size_-_maximum_size_2_MB') }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -242,10 +268,12 @@
                                                                             name="sub_category_id"></select>
                                                                     </div>
                                                                 </div>
+                                                                {{-- 
+                                                                <!-- Tax Percentage Field (Hidden - Default 0) -->
                                                                 <div class="col-lg-4 col-md-6">
                                                                     <div class="form-floating form-floating__icon">
                                                                         <input type="text" class="form-control"
-                                                                            name="tax" min="0" max="100"
+                                                                            name="tax_input" min="0" max="100"
                                                                             step="0.01"
                                                                             placeholder="{{ translate('add_tax_percentage') }}"
                                                                             value="{{ $service->tax }}">
@@ -253,6 +281,8 @@
                                                                         <span class="material-icons">percent</span>
                                                                     </div>
                                                                 </div>
+                                                                --}}
+                                                                <input type="hidden" name="tax" value="0">
                                                                 <div class="col-lg-4 col-md-6">
                                                                     <div class="form-floating form-floating__icon">
                                                                         <input type="number" class="form-control"

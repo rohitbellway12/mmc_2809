@@ -133,6 +133,7 @@ class ServiceController extends Controller
                 'name.0' => 'required|max:191',
                 'category_id' => 'required|uuid',
                 'description' => 'nullable',
+                'thumbnail' => 'nullable|image|max:10240',
                 // 'short_description' => 'required',
                 // 'short_description.0' => 'required',
                 'tax' => 'nullable|numeric|min:0|max:100',
@@ -149,9 +150,18 @@ class ServiceController extends Controller
         $service->sub_category_id = null;
         $service->short_description = $request->short_description[array_search('default', $request->lang)];
         $service->description = $request->description[array_search('default', $request->lang)] ?? '';
-        $service->cover_image = 'def.png';
-        $service->thumbnail = 'def.png';
-        $service->tax = $request->tax ?? 0;
+
+        // Optional Service Image (Thumbnail) - defaults to 'def.png' if not provided
+        if ($request->has('thumbnail')) {
+            $service->thumbnail = file_uploader('service/', 'png', $request->file('thumbnail'));
+            $service->cover_image = $service->thumbnail;
+        } else {
+            $service->thumbnail = 'def.png';
+            $service->cover_image = 'def.png';
+        }
+
+        // Tax is always set to 0 by default (tax percentage input hidden from form)
+        $service->tax = 0;
         $service->price = $request->price ?? 0;
         $service->min_bidding_price = 0;
         $service->save();
@@ -429,7 +439,8 @@ class ServiceController extends Controller
             $service->thumbnail = file_uploader('service/', 'png', $request->file('thumbnail'));
         }
 
-        $service->tax = $request->tax ?? 0;
+        // Tax is always set to 0
+        $service->tax = 0;
         $service->price = $request->price ?? 0;
         $service->min_bidding_price = 0;
         $service->save();
