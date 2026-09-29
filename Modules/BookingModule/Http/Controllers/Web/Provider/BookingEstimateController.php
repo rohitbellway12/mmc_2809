@@ -215,6 +215,9 @@ class BookingEstimateController extends Controller
                     $pushNotification->description = $description;
                     $pushNotification->zone_ids = [$provider->zone_id];
                     $pushNotification->to_users = ['customer'];
+                    $pushNotification->notification_type = 'estimate';
+                    $pushNotification->reference_id = $estimate->id;
+                    $pushNotification->booking_status = $estimate->status;
                     $pushNotification->is_active = 1;
                     $pushNotification->save();
 
@@ -367,6 +370,9 @@ class BookingEstimateController extends Controller
                 $pushNotification->description = $description;
                 $pushNotification->zone_ids = [$provider->zone_id];
                 $pushNotification->to_users = ['customer'];
+                $pushNotification->notification_type = 'estimate';
+                $pushNotification->reference_id = $estimate->id;
+                $pushNotification->booking_status = $estimate->status;
                 $pushNotification->is_active = 1;
                 $pushNotification->save();
 

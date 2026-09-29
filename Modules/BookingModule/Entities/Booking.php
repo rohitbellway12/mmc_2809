@@ -495,6 +495,10 @@ class Booking extends Model
                                     $pushNotification->description = $description;
                                     $pushNotification->zone_ids = [$model->zone_id];
                                     $pushNotification->to_users = ['customer'];
+                                    $pushNotification->notification_type = 'booking';
+                                    $pushNotification->booking_id = $model->id;
+                                    $pushNotification->booking_status = $model->booking_status;
+                                    $pushNotification->reference_id = $model->id;
                                     $pushNotification->is_active = 1;
                                     $pushNotification->save();
 
@@ -529,6 +533,10 @@ class Booking extends Model
                                     $pushNotification->description = $description;
                                     $pushNotification->zone_ids = [$model->zone_id];
                                     $pushNotification->to_users = ['provider-admin'];
+                                    $pushNotification->notification_type = 'booking';
+                                    $pushNotification->booking_id = $model->id;
+                                    $pushNotification->booking_status = $model->booking_status;
+                                    $pushNotification->reference_id = $model->id;
                                     $pushNotification->is_active = 1;
                                     $pushNotification->save();
                                 } catch (\Exception $e) {
@@ -694,6 +702,10 @@ class Booking extends Model
                                 $pushNotification->description = $description;
                                 $pushNotification->zone_ids = [$model->zone_id];
                                 $pushNotification->to_users = ['customer'];
+                                $pushNotification->notification_type = 'booking';
+                                $pushNotification->booking_id = $model->id;
+                                $pushNotification->booking_status = $model->booking_status;
+                                $pushNotification->reference_id = $model->id;
                                 $pushNotification->is_active = 1;
                                 $pushNotification->save();
 
@@ -729,6 +741,10 @@ class Booking extends Model
                                 $pushNotification->description = $description;
                                 $pushNotification->zone_ids = [$model->zone_id];
                                 $pushNotification->to_users = ['provider-admin'];
+                                $pushNotification->notification_type = 'booking';
+                                $pushNotification->booking_id = $model->id;
+                                $pushNotification->booking_status = $model->booking_status;
+                                $pushNotification->reference_id = $model->id;
                                 $pushNotification->is_active = 1;
                                 $pushNotification->save();
 

@@ -6903,4 +6903,7 @@ _Message' => 'Customer notification for provider bid offer
   'Update_Question' => 'Update Question',
   'Global question updated successfully' => 'Global question updated successfully',
   'Please select an option for' => 'Please select an option for',
+  'Please update your account details with accurate information. This information will be used by the admin for processing withdrawal request transaction
+' => 'Please update your account details with accurate information. This information will be used by the admin for processing withdrawal request transaction
+',
 );

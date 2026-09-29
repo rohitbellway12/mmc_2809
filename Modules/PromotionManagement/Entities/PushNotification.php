@@ -21,7 +21,51 @@ class PushNotification extends Model
 
     protected $appends = ['cover_image_full_path'];
 
-    protected $fillable = ['id', 'title', 'description', 'to_users', 'zone_ids', 'cover_image', 'is_active'];
+    protected $fillable = [
+        'id', 'title', 'description', 'to_users', 'zone_ids', 'cover_image', 'is_active',
+        'notification_type', 'booking_id', 'booking_status', 'reference_id'
+    ];
+
+    public function getNotificationTypeAttribute($value)
+    {
+        if (!empty($value) && $value !== 'general') {
+            return $value;
+        }
+        $title = strtolower($this->title ?? '');
+        $desc = strtolower($this->description ?? '');
+        if (str_contains($title, 'booking') || str_contains($desc, 'booking #')) {
+            return 'booking';
+        }
+        if (str_contains($title, 'bid') || str_contains($desc, 'provider has submitted a price quotation') || str_contains($desc, 'bid')) {
+            return 'post_bid';
+        }
+        if (str_contains($title, 'quotation') || str_contains($desc, 'quotation')) {
+            return 'estimate';
+        }
+        return $value ?: 'general';
+    }
+
+    public function getBookingStatusAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        $desc = strtolower($this->description ?? '');
+        $title = strtolower($this->title ?? '');
+        if (str_contains($desc, 'completed') || str_contains($title, 'completed') || str_contains($desc, 'complete')) {
+            return 'completed';
+        }
+        if (str_contains($desc, 'ongoing') || str_contains($title, 'ongoing')) {
+            return 'ongoing';
+        }
+        if (str_contains($desc, 'accepted') || str_contains($title, 'accepted')) {
+            return 'accepted';
+        }
+        if (str_contains($desc, 'canceled') || str_contains($title, 'canceled') || str_contains($desc, 'cancelled')) {
+            return 'canceled';
+        }
+        return $value;
+    }
 
     public function pushNotificationUser(): hasOne
     {

@@ -265,6 +265,8 @@ class PostController extends Controller
                     $pushNotification->description = translate('A service provider has submitted a price quotation of ') . with_currency_symbol($post_bid->offered_price) . translate(' for your request.');
                     $pushNotification->zone_ids = [$zoneId];
                     $pushNotification->to_users = ['customer'];
+                    $pushNotification->notification_type = 'post_bid';
+                    $pushNotification->reference_id = $post_bid->post_id;
                     $pushNotification->is_active = 1;
                     $pushNotification->save();
 
