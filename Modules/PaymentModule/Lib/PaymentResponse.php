@@ -54,6 +54,16 @@ class PaymentResponse
             'service_location' => $additional_data['service_location'] ?? 'customer',
             'booking_type' => $additional_data['booking_type'] ?? 'normal',
             'selected_slot_id' => $additional_data['selected_slot_id'] ?? null,
+            'answers' => $additional_data['answers'] ?? null,
+            'damage_description' => $additional_data['damage_description'] ?? null,
+            'car_registration_number' => $additional_data['car_registration_number'] ?? null,
+            'car_model' => $additional_data['car_model'] ?? null,
+            'car_manufacture_year' => $additional_data['car_manufacture_year'] ?? null,
+            'car_color' => $additional_data['car_color'] ?? null,
+            'special_conditions' => $additional_data['special_conditions'] ?? null,
+            'notes' => $additional_data['notes'] ?? null,
+            'postcode' => $additional_data['postcode'] ?? null,
+            'evidence_photos' => $additional_data['evidence_photos'] ?? null,
         ]);
 
         if (!$request->has('post_id') || is_null($request['post_id'])) {

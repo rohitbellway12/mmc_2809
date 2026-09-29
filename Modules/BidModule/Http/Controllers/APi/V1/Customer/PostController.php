@@ -187,9 +187,18 @@ class PostController extends Controller
         $post->zone_id = $request['zone_id'] ?? config('zone_id');
 
         // Car and damage details
+        $rawDamageDesc = $request['damage_description'] ?? null;
+        $extractedAssessment = null;
+        if (!empty($rawDamageDesc) && preg_match('/\[Assessment:\s*(.*?)\]/is', $rawDamageDesc, $matches)) {
+            $extractedAssessment = $matches[1];
+            $cleanDamageDesc = trim(preg_replace('/\[Assessment:\s*.*?\]/is', '', $rawDamageDesc));
+        } else {
+            $cleanDamageDesc = $rawDamageDesc;
+        }
+
         $post->car_model = $request['car_model'] ?? null;
         $post->car_registration_number = $request['car_registration_number'] ?? null;
-        $post->damage_description = $request['damage_description'] ?? null;
+        $post->damage_description = $cleanDamageDesc;
 
         // Multiple car images handling (supports car_images[] or car_image[] or single car_image)
         $uploadedCarImages = [];
@@ -274,17 +283,21 @@ class PostController extends Controller
         if (is_string($answers)) {
             $answers = json_decode($answers, true) ?? [];
         }
+        $savedQuestionIds = [];
         if (is_array($answers) && count($answers) > 0) {
             foreach ($answers as $questionId => $answer) {
                 $qId = null;
                 $ansVal = '';
-                if (is_array($answer) && isset($answer['provider_question_id'])) {
-                    $qId = $answer['provider_question_id'];
-                    $ansVal = is_array($answer['answer_value'] ?? null) ? implode(', ', $answer['answer_value']) : ($answer['answer_value'] ?? '');
-                } elseif (is_array($answer) && isset($answer['question_id'])) {
-                    $qId = $answer['question_id'];
-                    $ansVal = is_array($answer['answer'] ?? null) ? implode(', ', $answer['answer']) : ($answer['answer'] ?? '');
-                } else {
+                if (is_array($answer)) {
+                    $qId = $answer['provider_question_id'] ?? ($answer['question_id'] ?? ($answer['id'] ?? null));
+                    if (!$qId && !empty($answer['question'])) {
+                        $matchedQ = \Modules\ProviderManagement\Entities\ProviderQuestion::where('question_text', 'LIKE', '%' . trim($answer['question']) . '%')->first();
+                        $qId = $matchedQ?->id;
+                    }
+                    $ansVal = is_array($answer['answer_value'] ?? null)
+                        ? implode(', ', $answer['answer_value'])
+                        : (is_array($answer['answer'] ?? null) ? implode(', ', $answer['answer']) : ($answer['answer_value'] ?? ($answer['answer'] ?? '')));
+                } elseif (preg_match('/^[0-9a-fA-F-]{36}$/', (string)$questionId)) {
                     $qId = $questionId;
                     $ansVal = is_array($answer) ? implode(', ', $answer) : (string)$answer;
                 }
@@ -295,6 +308,28 @@ class PostController extends Controller
                         'provider_question_id' => $qId,
                         'answer_value' => $ansVal
                     ]);
+                    $savedQuestionIds[] = $qId;
+                }
+            }
+        }
+
+        // Fallback: If no answers were provided, but assessment text was embedded in damage_description
+        if (empty($savedQuestionIds) && !empty($extractedAssessment)) {
+            $assessmentParts = explode('|', $extractedAssessment);
+            foreach ($assessmentParts as $part) {
+                $kv = explode(':', trim($part), 2);
+                if (count($kv) === 2) {
+                    $qText = trim($kv[0]);
+                    $ansVal = trim($kv[1]);
+                    $matchedQ = \Modules\ProviderManagement\Entities\ProviderQuestion::where('question_text', 'LIKE', '%' . $qText . '%')->first();
+                    if ($matchedQ && !in_array($matchedQ->id, $savedQuestionIds)) {
+                        \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                            'post_id' => $post->id,
+                            'provider_question_id' => $matchedQ->id,
+                            'answer_value' => $ansVal
+                        ]);
+                        $savedQuestionIds[] = $matchedQ->id;
+                    }
                 }
             }
         }

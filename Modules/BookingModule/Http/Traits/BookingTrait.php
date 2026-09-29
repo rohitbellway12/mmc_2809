@@ -784,14 +784,25 @@ trait BookingTrait
             $booking->extra_fee = $extraFee;
             $booking->total_referral_discount_amount = $referralDiscount;
 
-            // Vehicle and damage details from bidding post
+            // Vehicle and damage details from bidding post or request
+            $rawDamage = $request['damage_description'] ?? ($biddingPost?->damage_description ?? null);
+            $extractedAssessment = null;
+            if (!empty($rawDamage) && preg_match('/\[Assessment:\s*(.*?)\]/is', $rawDamage, $matches)) {
+                $extractedAssessment = $matches[1];
+                $cleanDamage = trim(preg_replace('/\[Assessment:\s*.*?\]/is', '', $rawDamage));
+            } else {
+                $cleanDamage = $rawDamage;
+            }
+
             if ($biddingPost) {
-                $booking->car_model = $booking->car_model ?? $biddingPost->car_model;
-                $booking->car_registration_number = $booking->car_registration_number ?? $biddingPost->car_registration_number;
-                $booking->damage_description = $booking->damage_description ?? $biddingPost->damage_description;
+                $booking->car_model = $request['car_model'] ?? ($biddingPost->car_model ?? null);
+                $booking->car_registration_number = $request['car_registration_number'] ?? ($biddingPost->car_registration_number ?? null);
+                $booking->damage_description = $cleanDamage;
                 if (!empty($biddingPost->car_image) && empty($booking->evidence_photos)) {
                     $booking->evidence_photos = is_array($biddingPost->car_image) ? $biddingPost->car_image : [$biddingPost->car_image];
                 }
+            } else {
+                $booking->damage_description = $cleanDamage;
             }
 
             $booking->booking_type = $request['booking_type'] ?? 'normal';
@@ -799,33 +810,83 @@ trait BookingTrait
 
             $booking->save();
 
-            // Question Answers
-            if (isset($request['answers']) && is_array($request['answers']) && count($request['answers']) > 0) {
-                foreach ($request['answers'] as $questionId => $answer) {
-                    $question = \Modules\ProviderManagement\Entities\ProviderQuestion::find($questionId);
-                    $finalAnswer = $answer;
-
-                    if ($question && $question->question_type == 'file' && request()->hasFile('answers.' . $questionId)) {
-                        $file = request()->file('answers.' . $questionId);
-                        $finalAnswer = file_uploader('booking/questions/', $file->getClientOriginalExtension(), $file);
-                    }
-
-                    \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
-                        'booking_id' => $booking->id,
-                        'post_id' => $biddingPost?->id,
-                        'provider_question_id' => $questionId,
-                        'answer_value' => is_array($finalAnswer) ? implode(', ', $finalAnswer) : $finalAnswer
-                    ]);
+            // Link post to booking
+            if ($biddingPost) {
+                $biddingPost->booking_id = $booking->id;
+                $biddingPost->is_booked = 1;
+                if (!empty($cleanDamage)) {
+                    $biddingPost->damage_description = $cleanDamage;
                 }
-            } elseif ($biddingPost) {
+                $biddingPost->save();
+            }
+
+            // Question Answers
+            $savedBookingQuestionIds = [];
+            if (isset($request['answers']) && (is_array($request['answers']) || is_string($request['answers']))) {
+                $reqAnswers = is_string($request['answers']) ? json_decode($request['answers'], true) : $request['answers'];
+                if (is_array($reqAnswers) && count($reqAnswers) > 0) {
+                    foreach ($reqAnswers as $questionId => $answer) {
+                        $qId = null;
+                        $ansVal = '';
+                        if (is_array($answer)) {
+                            $qId = $answer['provider_question_id'] ?? ($answer['question_id'] ?? ($answer['id'] ?? null));
+                            if (!$qId && !empty($answer['question'])) {
+                                $matchedQ = \Modules\ProviderManagement\Entities\ProviderQuestion::where('question_text', 'LIKE', '%' . trim($answer['question']) . '%')->first();
+                                $qId = $matchedQ?->id;
+                            }
+                            $ansVal = is_array($answer['answer_value'] ?? null)
+                                ? implode(', ', $answer['answer_value'])
+                                : (is_array($answer['answer'] ?? null) ? implode(', ', $answer['answer']) : ($answer['answer_value'] ?? ($answer['answer'] ?? '')));
+                        } elseif (preg_match('/^[0-9a-fA-F-]{36}$/', (string)$questionId)) {
+                            $qId = $questionId;
+                            $ansVal = is_array($answer) ? implode(', ', $answer) : (string)$answer;
+                        }
+
+                        if (!empty($qId)) {
+                            \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                                'booking_id' => $booking->id,
+                                'post_id' => $biddingPost?->id,
+                                'provider_question_id' => $qId,
+                                'answer_value' => $ansVal
+                            ]);
+                            $savedBookingQuestionIds[] = $qId;
+                        }
+                    }
+                }
+            }
+
+            // If no answers saved from request, copy from bidding post or fallback to extracted assessment
+            if (empty($savedBookingQuestionIds) && $biddingPost) {
                 $postAnswers = \Modules\BookingModule\Entities\BookingQuestionAnswer::where('post_id', $biddingPost->id)->get();
-                foreach ($postAnswers as $postAns) {
-                    \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
-                        'booking_id' => $booking->id,
-                        'post_id' => $biddingPost->id,
-                        'provider_question_id' => $postAns->provider_question_id,
-                        'answer_value' => $postAns->answer_value
-                    ]);
+                if ($postAnswers->isNotEmpty()) {
+                    foreach ($postAnswers as $postAns) {
+                        \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                            'booking_id' => $booking->id,
+                            'post_id' => $biddingPost->id,
+                            'provider_question_id' => $postAns->provider_question_id,
+                            'answer_value' => $postAns->answer_value
+                        ]);
+                        $savedBookingQuestionIds[] = $postAns->provider_question_id;
+                    }
+                } elseif (!empty($extractedAssessment)) {
+                    $assessmentParts = explode('|', $extractedAssessment);
+                    foreach ($assessmentParts as $part) {
+                        $kv = explode(':', trim($part), 2);
+                        if (count($kv) === 2) {
+                            $qText = trim($kv[0]);
+                            $ansVal = trim($kv[1]);
+                            $matchedQ = \Modules\ProviderManagement\Entities\ProviderQuestion::where('question_text', 'LIKE', '%' . $qText . '%')->first();
+                            if ($matchedQ && !in_array($matchedQ->id, $savedBookingQuestionIds)) {
+                                \Modules\BookingModule\Entities\BookingQuestionAnswer::create([
+                                    'booking_id' => $booking->id,
+                                    'post_id' => $biddingPost->id,
+                                    'provider_question_id' => $matchedQ->id,
+                                    'answer_value' => $ansVal
+                                ]);
+                                $savedBookingQuestionIds[] = $matchedQ->id;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -842,20 +903,18 @@ trait BookingTrait
             }
 
             $serviceCount = max(1, $postServices->count());
-            $allocatedPrice = 0;
-            $allocatedTax = 0;
 
             foreach ($postServices as $index => $srvItem) {
-                $isLast = ($index === $serviceCount - 1);
-
-                if ($isLast) {
-                    $itemPrice = round($data['price'] - $allocatedPrice, 2);
-                    $itemTax = round($tax - $allocatedTax, 2);
+                // If package quotation has multiple services:
+                // Primary service gets full quotation price, secondary services are included in package (£0.00)
+                if ($index === 0) {
+                    $itemPrice = round($data['price'], 2);
+                    $itemTax = round($tax, 2);
+                    $variantText = $serviceCount > 1 ? 'Quotation Package' : null;
                 } else {
-                    $itemPrice = round($data['price'] / $serviceCount, 2);
-                    $itemTax = round($tax / $serviceCount, 2);
-                    $allocatedPrice += $itemPrice;
-                    $allocatedTax += $itemTax;
+                    $itemPrice = 0.00;
+                    $itemTax = 0.00;
+                    $variantText = 'Included in Quotation Package';
                 }
 
                 $itemTotalCost = $itemPrice + $itemTax;
@@ -864,7 +923,7 @@ trait BookingTrait
                 $detail->booking_id = $booking->id;
                 $detail->service_id = $srvItem->id;
                 $detail->service_name = $srvItem->name ?? 'Customized Service';
-                $detail->variant_key = null;
+                $detail->variant_key = $variantText;
                 $detail->quantity = 1;
                 $detail->service_cost = $itemPrice;
                 $detail->discount_amount = 0;

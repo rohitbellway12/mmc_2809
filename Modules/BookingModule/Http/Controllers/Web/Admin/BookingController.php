@@ -446,7 +446,9 @@ class BookingController extends Controller
                 'customer',
                 'provider',
                 'serviceman',
-                'status_histories.user'
+                'status_histories.user',
+                'questionAnswers.question',
+                'customizeBooking'
             ])
                 ->find($id);
 

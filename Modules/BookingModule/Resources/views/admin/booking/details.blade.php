@@ -358,6 +358,19 @@
                                 </div>
                             </div>
 
+                            @if($booking->customizeBooking)
+                                <div class="alert alert-info d-flex align-items-center justify-content-between mb-3 mt-4 p-3 rounded" style="background-color: #eff6ff; border: 1px solid #bfdbfe;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="material-icons text-primary" style="font-size: 28px;">local_offer</span>
+                                        <div>
+                                            <h5 class="mb-1 text-primary fw-bold">{{ translate('Customized Request Quotation Package') }}</h5>
+                                            <div class="text-muted fz-12">{{ translate('Agreed Quotation Total') }}: <strong class="text-primary">{{ with_currency_symbol($booking->total_booking_amount) }}</strong> {{ translate('(Lump-sum package covering all requested services below)') }}</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-primary text-white px-3 py-2 fw-semibold">{{ translate('Quotation Total') }}: {{ with_currency_symbol($booking->total_booking_amount) }}</span>
+                                </div>
+                            @endif
+
                             <div class="d-flex justify-content-start gap-2">
                                 <h3 class="mb-3">{{ translate('Booking_Summary') }}</h3>
                             </div>
@@ -384,7 +397,13 @@
                                                             <a href="{{ route('admin.service.detail', [$detail->service->id]) }}"
                                                                 class="fw-bold">{{ Str::limit($detail->service->name, 30) }}</a>
                                                             <div class="text-capitalize">
-                                                                {{ Str::limit($detail ? $detail->variant_key : '', 50) }}
+                                                                @if($booking->customizeBooking && ($detail->service_cost == 0 || $detail->variant_key == 'Included in Quotation Package'))
+                                                                    <span class="badge bg-light text-success border border-success px-2 py-1">{{ translate('Included in Quotation Package') }}</span>
+                                                                @elseif($booking->customizeBooking && $booking->detail->count() > 1 && $detail->variant_key == 'Quotation Package')
+                                                                    <span class="badge bg-light text-primary border border-primary px-2 py-1">{{ translate('Quotation Package') }}</span>
+                                                                @else
+                                                                    {{ Str::limit($detail ? $detail->variant_key : '', 50) }}
+                                                                @endif
                                                             </div>
                                                             @if ($detail->overall_coupon_discount_amount > 0)
                                                                 <small
@@ -398,7 +417,13 @@
                                                             class="badge badge-pill badge-danger">{{ translate('Service_unavailable') }}</span>
                                                     @endif
                                                 </td>
-                                                <td>{{ with_currency_symbol($detail->service_cost) }}</td>
+                                                <td>
+                                                    @if($booking->customizeBooking && $detail->service_cost == 0)
+                                                        <span class="text-success fw-semibold">{{ translate('Included') }}</span>
+                                                    @else
+                                                        {{ with_currency_symbol($detail->service_cost) }}
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <span>{{ $detail->quantity }}</span>
                                                 </td>
@@ -415,7 +440,12 @@
 
                                                 </td>
                                                 <td>{{ with_currency_symbol($detail->tax_amount) }}</td>
-                                                <td class="text--end">{{ with_currency_symbol($detail->total_cost) }}
+                                                <td class="text--end">
+                                                    @if($booking->customizeBooking && $detail->total_cost == 0)
+                                                        <span class="text-success fw-semibold">{{ translate('Included') }}</span>
+                                                    @else
+                                                        {{ with_currency_symbol($detail->total_cost) }}
+                                                    @endif
                                                 </td>
                                             </tr>
                                             @php($subTotal += $detail->service_cost * $detail->quantity)
@@ -1012,7 +1042,7 @@
                                     </div>
                                 </div>
 
-                                @if ($booking->special_conditions || $booking->notes || $booking->postcode || $booking->evidence_photos)
+                                @if ($booking->car_model || $booking->car_color || $booking->car_registration_number || $booking->booking_type || $booking->damage_description || $booking->special_conditions || $booking->notes || $booking->postcode || $booking->evidence_photos)
                                     <div class="c1-light-bg radius-10 mt-3">
                                         <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-3 px-4 mb-2 cursor-pointer section-toggle"
                                             data-bs-toggle="collapse" data-bs-target="#vehicleDetailsContent">
@@ -1062,11 +1092,15 @@
                                                             </p>
                                                         </li>
                                                     @endif
-                                                    @if ($booking->damage_description)
+                                                    <?php
+                                                        $rawAdminDamageDesc = $booking->damage_description ?? '';
+                                                        $cleanAdminDamageDesc = trim(preg_replace('/\[Assessment:\s*.*?\]/is', '', $rawAdminDamageDesc));
+                                                    ?>
+                                                    @if (!empty($cleanAdminDamageDesc))
                                                         <li>
                                                             <span class="material-icons">report_problem</span>
                                                             <p><strong>{{ translate('Damage_Description') }}:</strong>
-                                                                {{ $booking->damage_description }}</p>
+                                                                {{ $cleanAdminDamageDesc }}</p>
                                                         </li>
                                                     @endif
                                                     @if ($booking->special_conditions)
@@ -1113,46 +1147,86 @@
                                             </div>
                                         </div>
                                     </div>
+                                @endif
 
-                                    <div class="c1-light-bg radius-10 mt-3">
-                                        <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-3 px-4 mb-2 cursor-pointer section-toggle"
-                                            data-bs-toggle="collapse" data-bs-target="#questionAnswersContent">
-                                            <h4 class="d-flex align-items-center gap-2 mb-0">
-                                                <span class="material-icons title-color">help_outline</span>
-                                                {{ translate('Questions_&_Answers') }}
-                                            </h4>
-                                            <span class="material-icons toggle-icon">expand_more</span>
-                                        </div>
+                                    <?php
+                                        $adminBookingQas = $booking->questionAnswers;
+                                        if ($adminBookingQas->isEmpty() && $booking->customizeBooking) {
+                                            $adminBookingQas = \Modules\BookingModule\Entities\BookingQuestionAnswer::with('question')->where('post_id', $booking->customizeBooking->id)->get();
+                                        }
+                                        $adminParsedAssessmentQas = [];
+                                        if ($adminBookingQas->isEmpty()) {
+                                            $rawAssessment = $booking->damage_description ?? ($booking->customizeBooking?->damage_description ?? '');
+                                            if (preg_match('/\[Assessment:\s*(.*?)\]/is', $rawAssessment, $matches)) {
+                                                $parts = explode('|', $matches[1]);
+                                                foreach ($parts as $p) {
+                                                    $kv = explode(':', trim($p), 2);
+                                                    if (count($kv) === 2) {
+                                                        $adminParsedAssessmentQas[] = [
+                                                            'question' => trim($kv[0]),
+                                                            'answer' => trim($kv[1])
+                                                        ];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ?>
 
-                                        <div class="collapse" id="questionAnswersContent">
-                                            <div class="py-3 px-4">
-                                                <ul class="list-info">
-                                                    @foreach ($booking->questionAnswers as $answer)
-                                                        <li>
-                                                            <span class="material-icons">help_outline</span>
-                                                            <div>
-                                                                <p class="mb-1">
-                                                                    <strong>{{ $answer?->question?->question_text ?? translate('Question') }}:</strong>
-                                                                </p>
-                                                                @if ($answer?->question?->question_type == 'file')
-                                                                    <a href="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}"
-                                                                        target="_blank">
-                                                                        <img width="100"
-                                                                            src="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}"
-                                                                            alt="">
-                                                                    </a>
-                                                                @else
-                                                                    <p class="text-primary mb-0">
-                                                                        {{ $answer->answer_value }}</p>
-                                                                @endif
-                                                            </div>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
+                                    @if ($adminBookingQas->isNotEmpty() || !empty($adminParsedAssessmentQas))
+                                        <div class="c1-light-bg radius-10 mt-3">
+                                            <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-3 px-4 mb-2 cursor-pointer section-toggle"
+                                                data-bs-toggle="collapse" data-bs-target="#questionAnswersContent">
+                                                <h4 class="d-flex align-items-center gap-2 mb-0">
+                                                    <span class="material-icons title-color">help_outline</span>
+                                                    {{ translate('Category_Questions_&_Answers') }}
+                                                </h4>
+                                                <span class="material-icons toggle-icon">expand_more</span>
+                                            </div>
+
+                                            <div class="collapse show" id="questionAnswersContent">
+                                                <div class="py-3 px-4">
+                                                    <ul class="list-info">
+                                                        @if ($adminBookingQas->isNotEmpty())
+                                                            @foreach ($adminBookingQas as $answer)
+                                                                <li>
+                                                                    <span class="material-icons">help_outline</span>
+                                                                    <div>
+                                                                        <p class="mb-1">
+                                                                            <strong>{{ $answer?->question?->question_text ?? translate('Question') }}:</strong>
+                                                                        </p>
+                                                                        @if ($answer?->question?->question_type == 'file')
+                                                                            <a href="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}"
+                                                                                target="_blank">
+                                                                                <img width="100"
+                                                                                    src="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}"
+                                                                                    alt="">
+                                                                            </a>
+                                                                        @else
+                                                                            <p class="text-primary mb-0 fw-semibold">
+                                                                                {{ $answer->answer_value }}</p>
+                                                                        @endif
+                                                                    </div>
+                                                                </li>
+                                                            @endforeach
+                                                        @else
+                                                            @foreach ($adminParsedAssessmentQas as $pa)
+                                                                <li>
+                                                                    <span class="material-icons">help_outline</span>
+                                                                    <div>
+                                                                        <p class="mb-1">
+                                                                            <strong>{{ $pa['question'] }}:</strong>
+                                                                        </p>
+                                                                        <p class="text-primary mb-0 fw-semibold">
+                                                                            {{ $pa['answer'] }}</p>
+                                                                    </div>
+                                                                </li>
+                                                            @endforeach
+                                                        @endif
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
+                                    @endif
 {{--
                                 <div class="c1-light-bg radius-10 serviceman-information">
                                     <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-3 px-4 mb-2 cursor-pointer section-toggle"

@@ -6906,4 +6906,12 @@ _Message' => 'Customer notification for provider bid offer
   'Please update your account details with accurate information. This information will be used by the admin for processing withdrawal request transaction
 ' => 'Please update your account details with accurate information. This information will be used by the admin for processing withdrawal request transaction
 ',
+  'Customized Request Quotation Package' => 'Customized Request Quotation Package',
+  'Agreed Quotation Total' => 'Agreed Quotation Total',
+  '(Lump-sum package covering all requested services below)' => '(Lump-sum package covering all requested services below)',
+  'Quotation Total' => 'Quotation Total',
+  'Quotation Package' => 'Quotation Package',
+  'Included in Quotation Package' => 'Included in Quotation Package',
+  'Included' => 'Included',
+  'Category_Questions_&_Answers' => 'Category Questions & Answers',
 );

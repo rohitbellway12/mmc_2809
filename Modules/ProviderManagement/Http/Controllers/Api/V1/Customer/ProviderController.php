@@ -562,6 +562,11 @@ class ProviderController extends Controller
             'damage_description' => 'nullable|string',
             'car_image' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:10240',
             'enter_postcode' => 'nullable|string',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
+            'lat' => 'nullable',
+            'lon' => 'nullable',
+            'lng' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -573,6 +578,10 @@ class ProviderController extends Controller
             if (empty($serviceIds)) {
                 return response()->json(response_formatter(DEFAULT_400, null, 'At least one service ID is required.'), 400);
             }
+
+            $userLat = $request->latitude ?? $request->lat;
+            $userLon = $request->longitude ?? ($request->lon ?? $request->lng);
+            $hasUserCoords = !empty($userLat) && !empty($userLon) && is_numeric($userLat) && is_numeric($userLon);
 
             $postcode = $request->enter_postcode;
 
@@ -621,7 +630,7 @@ class ProviderController extends Controller
                 ->select('provider_id', 'service_id', 'service_price', 'service_types', 'estimated_time', 'completed_service_images')
                 ->get();
 
-            $providers = $providers->map(function ($provider) use ($services, $allServiceVariations, $allCustomPrices, $allSubscribedPrices) {
+            $providers = $providers->map(function ($provider) use ($services, $allServiceVariations, $allCustomPrices, $allSubscribedPrices, $hasUserCoords, $userLat, $userLon) {
                 $providerZoneId = $provider->zone_id;
                 $providerSelectedServices = [];
                 $totalPrice = 0;
@@ -721,8 +730,38 @@ class ProviderController extends Controller
                 $provider->estimated_time = $providerSelectedServices[0]['estimated_time'] ?? null;
                 $provider->completed_service_images = $providerSelectedServices[0]['completed_service_images'] ?? [];
 
+                // Calculate distance between user and provider
+                $coords = is_array($provider->coordinates) ? $provider->coordinates : (is_string($provider->coordinates) ? json_decode($provider->coordinates, true) : null);
+                $providerLat = $coords['latitude'] ?? ($coords['lat'] ?? ($provider->latitude ?? null));
+                $providerLon = $coords['longitude'] ?? ($coords['lon'] ?? ($coords['lng'] ?? ($provider->longitude ?? null)));
+
+                $distanceKm = null;
+                $distanceMiles = null;
+                $distanceFormatted = null;
+
+                if ($hasUserCoords && !empty($providerLat) && !empty($providerLon) && is_numeric($providerLat) && is_numeric($providerLon)) {
+                    $rawDist = get_distance([(float) $userLat, (float) $userLon], [(float) $providerLat, (float) $providerLon], 'K');
+                    if (is_numeric($rawDist) && !is_nan($rawDist) && !is_infinite($rawDist)) {
+                        $distanceKm = (float) number_format($rawDist, 2, '.', '');
+                        $distanceMiles = (float) number_format($rawDist * 0.621371, 2, '.', '');
+                        $distanceFormatted = number_format($rawDist, 2) . ' km';
+                    }
+                }
+
+                $provider->distance = $distanceKm;
+                $provider->distance_in_km = $distanceKm;
+                $provider->distance_in_miles = $distanceMiles;
+                $provider->distance_formatted = $distanceFormatted;
+
                 return $provider;
             });
+
+            // Sort providers by distance (closest first) when user location is provided
+            if ($hasUserCoords) {
+                $providers = $providers->sortBy(function ($p) {
+                    return $p->distance !== null ? $p->distance : 99999999;
+                })->values();
+            }
 
             if ($providers->count() > 0) {
                 return response()->json(response_formatter(DEFAULT_200, $providers), 200);

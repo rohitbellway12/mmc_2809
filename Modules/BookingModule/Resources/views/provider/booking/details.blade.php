@@ -160,6 +160,18 @@
                                     </h5>
                                 </div>
                             </div>
+                            @if($booking->customizeBooking)
+                                <div class="alert alert-info d-flex align-items-center justify-content-between mb-3 mt-4 p-3 rounded" style="background-color: #eff6ff; border: 1px solid #bfdbfe;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="material-icons text-primary" style="font-size: 28px;">local_offer</span>
+                                        <div>
+                                            <h5 class="mb-1 text-primary fw-bold">{{ translate('Customized Request Quotation Package') }}</h5>
+                                            <div class="text-muted fz-12">{{ translate('Agreed Quotation Total') }}: <strong class="text-primary">{{ with_currency_symbol($booking->total_booking_amount) }}</strong> {{ translate('(Lump-sum package covering all requested services below)') }}</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-primary text-white px-3 py-2 fw-semibold">{{ translate('Quotation Total') }}: {{ with_currency_symbol($booking->total_booking_amount) }}</span>
+                                </div>
+                            @endif
                             <h3 class="mb-3 mt-4">{{translate('Booking_Summary')}}</h3>
                             <div class="table-responsive border-bottom">
                                 <table class="table text-nowrap align-right align-middle mb-0">
@@ -189,7 +201,15 @@
                                                                     <a href="{{route('provider.service.detail',[$detail->service->id])}}"
                                                                        class="fw-bold">{{Str::limit($detail->service->name, 30)}}</a>
                                                                     <div
-                                                                        class="text-capitalize">{{Str::limit($detail ? $detail->variant_key : '', 50)}}</div>
+                                                                        class="text-capitalize">
+                                                                        @if($booking->customizeBooking && ($detail->service_cost == 0 || $detail->variant_key == 'Included in Quotation Package'))
+                                                                            <span class="badge bg-light text-success border border-success px-2 py-1">{{ translate('Included in Quotation Package') }}</span>
+                                                                        @elseif($booking->customizeBooking && $booking->detail->count() > 1 && $detail->variant_key == 'Quotation Package')
+                                                                            <span class="badge bg-light text-primary border border-primary px-2 py-1">{{ translate('Quotation Package') }}</span>
+                                                                        @else
+                                                                            {{Str::limit($detail ? $detail->variant_key : '', 50)}}
+                                                                        @endif
+                                                                    </div>
                                                                     @if(isset($detail->tyre))
                                                                         <div class="fz-12 text-muted">
                                                                             {{ $detail->tyre->brand }} {{ $detail->tyre->model }} ({{ $detail->tyre->size }})
@@ -209,7 +229,13 @@
                                                         @endif
                                                     </div>
                                             </td>
-                                            <td>{{with_currency_symbol($detail->service_cost)}}</td>
+                                            <td>
+                                                @if($booking->customizeBooking && $detail->service_cost == 0)
+                                                    <span class="text-success fw-semibold">{{ translate('Included') }}</span>
+                                                @else
+                                                    {{with_currency_symbol($detail->service_cost)}}
+                                                @endif
+                                            </td>
                                             <td>{{$detail->quantity}}</td>
                                             <td>
                                                 @if($detail?->discount_amount > 0)
@@ -220,7 +246,13 @@
                                                         class="fz-12 text-capitalize">{{translate('campaign')}}</span>
                                                 @endif
                                             </td>
-                                            <td>{{with_currency_symbol($detail->total_cost)}}</td>
+                                            <td>
+                                                @if($booking->customizeBooking && $detail->total_cost == 0)
+                                                    <span class="text-success fw-semibold">{{ translate('Included') }}</span>
+                                                @else
+                                                    {{with_currency_symbol($detail->total_cost)}}
+                                                @endif
+                                            </td>
                                         </tr>
                                         @php($sub_total+=$detail->service_cost*$detail->quantity)
                                     @endforeach
@@ -703,10 +735,14 @@
                                                         <p><strong>{{ translate('Booking_Type') }}:</strong> {{ ucfirst(str_replace('_', ' ', $booking->booking_type)) }}</p>
                                                     </li>
                                                 @endif
-                                                @if($booking->damage_description)
+                                                <?php
+                                                    $rawDamageDesc = $booking->damage_description ?? '';
+                                                    $cleanDamageDesc = trim(preg_replace('/\[Assessment:\s*.*?\]/is', '', $rawDamageDesc));
+                                                ?>
+                                                @if(!empty($cleanDamageDesc))
                                                     <li>
                                                         <span class="material-icons">report_problem</span>
-                                                        <p><strong>{{ translate('Damage_Description') }}:</strong> {{ $booking->damage_description }}</p>
+                                                        <p><strong>{{ translate('Damage_Description') }}:</strong> {{ $cleanDamageDesc }}</p>
                                                     </li>
                                                 @endif
                                                 @if($booking->special_conditions)
@@ -749,32 +785,67 @@
                                     </div>
                                 @endif
 
-                                @if($booking->questionAnswers->isNotEmpty())
+                                <?php
+                                    $bookingQas = $booking->questionAnswers;
+                                    if ($bookingQas->isEmpty() && $booking->customizeBooking) {
+                                        $bookingQas = \Modules\BookingModule\Entities\BookingQuestionAnswer::with('question')->where('post_id', $booking->customizeBooking->id)->get();
+                                    }
+                                    $parsedAssessmentQas = [];
+                                    if ($bookingQas->isEmpty()) {
+                                        $rawAssessmentText = $booking->damage_description ?? ($booking->customizeBooking?->damage_description ?? '');
+                                        if (preg_match('/\[Assessment:\s*(.*?)\]/is', $rawAssessmentText, $matches)) {
+                                            $parts = explode('|', $matches[1]);
+                                            foreach ($parts as $p) {
+                                                $kv = explode(':', trim($p), 2);
+                                                if (count($kv) === 2) {
+                                                    $parsedAssessmentQas[] = [
+                                                        'question' => trim($kv[0]),
+                                                        'answer' => trim($kv[1])
+                                                    ];
+                                                }
+                                            }
+                                        }
+                                    }
+                                ?>
+
+                                @if($bookingQas->isNotEmpty() || !empty($parsedAssessmentQas))
                                     <div class="c1-light-bg radius-10 mt-3">
                                         <div class="border-bottom d-flex align-items-center justify-content-between gap-2 py-3 px-4 mb-2">
                                             <h4 class="d-flex align-items-center gap-2">
                                                 <span class="material-icons title-color">question_answer</span>
-                                                {{ translate('Questions_&_Answers') }}
+                                                {{ translate('Category_Questions_&_Answers') }}
                                             </h4>
                                         </div>
 
                                         <div class="py-3 px-4">
                                             <ul class="list-info">
-                                                @foreach($booking->questionAnswers as $answer)
-                                                    <li class="align-items-start">
-                                                        <span class="material-icons text-primary">help_outline</span>
-                                                        <div>
-                                                            <p class="mb-1"><strong>{{ $answer?->question?->question_text ?? translate('Question') }}:</strong></p>
-                                                            @if($answer?->question?->question_type == 'file')
-                                                                <a href="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}" target="_blank">
-                                                                    <img width="100" src="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}" alt="">
-                                                                </a>
-                                                            @else
-                                                                <p class="text-primary mb-0">{{ $answer->answer_value }}</p>
-                                                            @endif
-                                                        </div>
-                                                    </li>
-                                                @endforeach
+                                                @if($bookingQas->isNotEmpty())
+                                                    @foreach($bookingQas as $answer)
+                                                        <li class="align-items-start">
+                                                            <span class="material-icons text-primary">help_outline</span>
+                                                            <div>
+                                                                <p class="mb-1"><strong>{{ $answer?->question?->question_text ?? translate('Question') }}:</strong></p>
+                                                                @if($answer?->question?->question_type == 'file')
+                                                                    <a href="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}" target="_blank">
+                                                                        <img width="100" src="{{ asset('storage/app/public/booking/questions/' . $answer->answer_value) }}" alt="">
+                                                                    </a>
+                                                                @else
+                                                                    <p class="text-primary mb-0 fw-semibold">{{ $answer->answer_value }}</p>
+                                                                @endif
+                                                            </div>
+                                                        </li>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($parsedAssessmentQas as $pa)
+                                                        <li class="align-items-start">
+                                                            <span class="material-icons text-primary">help_outline</span>
+                                                            <div>
+                                                                <p class="mb-1"><strong>{{ $pa['question'] }}:</strong></p>
+                                                                <p class="text-primary mb-0 fw-semibold">{{ $pa['answer'] }}</p>
+                                                            </div>
+                                                        </li>
+                                                    @endforeach
+                                                @endif
                                             </ul>
                                         </div>
                                     </div>

@@ -246,7 +246,7 @@ class BookingController extends Controller
         }
 
         $webPage = $request->has('web_page') ? $request['web_page'] : 'details';
-        $booking = $this->booking->with(['detail.service' => fn($query) => $query->withTrashed(), 'detail.service.category', 'detail.service.subCategory', 'detail.variation', 'customer', 'provider', 'serviceman', 'status_histories.user', 'slotBooking.timeSlot', 'questionAnswers.question'])->find($id);
+        $booking = $this->booking->with(['detail.service' => fn($query) => $query->withTrashed(), 'detail.service.category', 'detail.service.subCategory', 'detail.variation', 'customer', 'provider', 'serviceman', 'status_histories.user', 'slotBooking.timeSlot', 'questionAnswers.question', 'customizeBooking'])->find($id);
 
         if (!$booking) {
             Toastr::error(translate('Booking not found'));
